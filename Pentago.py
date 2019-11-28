@@ -1,8 +1,10 @@
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.button import Button
+from kivy.uix.label import Label
 from kivy.uix.image import Image
 from kivy.app import App
+import sys
 
 
 class ImageButton(ButtonBehavior, Image):
@@ -19,9 +21,14 @@ class Board(GridLayout):
         self.rows = 8
         self.cols = 8
         self.buttons = list()
-        self.reset = Button(font_size=100)
+        self.reset = Button(text="Click to play again")
         self.reset.bind(on_press=self.reset_board)
+        self.menu = Button(text="Click to return to menu")
+        self.menu.bind(on_press=self.go_menu)
+        self.quit = Button(text="Click to quit")
+        self.quit.bind(on_press=self.quit_game)
         self.rotatable = False
+        self.players = 0
         self.player = 1
         for i in range(self.rows):
             self.buttons.append(list())
@@ -34,7 +41,6 @@ class Board(GridLayout):
                     self.buttons[i][j].bind(on_press=self.rotate)
                 else:
                     self.buttons[i][j].source = "board.png"
-                self.add_widget(self.buttons[i][j])
         self.buttons[0][1].source = "right.png"
         self.buttons[0][1].start_row = self.buttons[1][0].start_row = 1
         self.buttons[0][1].start_col = self.buttons[1][0].start_col = 1
@@ -59,8 +65,24 @@ class Board(GridLayout):
         self.buttons[1][self.cols-1].cw = True
         self.buttons[0][self.cols-2].source = "left.png"
         self.buttons[0][self.cols-2].cw = False
+        self.go_menu()
+
+    def quit_game(self, touch):
+        sys.exit()
+
+    def go_menu(self, touch=None):
+        self.clear_widgets()
+        self.add_widget(Label(text="How many players?"))
+        for i in range(1, 3):
+            button = Button(text=str(i))
+            button.bind(on_press=self.reset_board)
+            self.add_widget(button)
 
     def reset_board(self, touch):
+        if touch.text == "1":
+            self.players = 1
+        elif touch.text == "2":
+            self.players = 2
         self.clear_widgets()
         self.rotatable = False
         self.player = 1
@@ -134,16 +156,22 @@ class Board(GridLayout):
                 break
         if found1 and found2 or filled == (self.rows-2) * (self.cols-2):
             self.clear_widgets()
-            self.reset.text = "Tie! Click to play again"
+            self.add_widget(Label(text="Tie!"))
             self.add_widget(self.reset)
+            self.add_widget(self.menu)
+            self.add_widget(self.quit)
         elif found1:
             self.clear_widgets()
-            self.reset.text = "Player 1 wins! Click to play again"
+            self.add_widget(Label(text="Player 1 wins!"))
             self.add_widget(self.reset)
+            self.add_widget(self.menu)
+            self.add_widget(self.quit)
         elif found2:
             self.clear_widgets()
-            self.reset.text = "Player 2 wins! Click to play again"
+            self.add_widget(Label(text="Player 2 wins!"))
             self.add_widget(self.reset)
+            self.add_widget(self.menu)
+            self.add_widget(self.quit)
 
     def rotate(self, touch):
         if self.rotatable:
@@ -171,6 +199,8 @@ class Board(GridLayout):
                         self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].disabled = temp_d
             self.rotatable = False
             self.win()
+            if self.players == 1:
+                self.respond()
 
     def place(self, touch):
         if not touch.disabled and not self.rotatable:

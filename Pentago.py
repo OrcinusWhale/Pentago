@@ -77,26 +77,25 @@ class Board(GridLayout):
         self.buttons[0][self.cols-2].cw = False
         self.go_menu()
 
-    @staticmethod
     def convert_board(self, board=None):
-        if board == None:
-            board = self.board
+        if board is None:
+            board = self.buttons
         converted = list()
-        for i in range(1, board.length()-1):
+        for i in range(1, len(board)-1):
             converted.append(list())
-            for j in range(1, board[i].length()-1):
+            for j in range(1, len(board[i])-1):
                 if board[i][j].source == "red.png":
-                    converted[i].append(1)
+                    converted[i-1].append(1)
                 elif board[i][j].source == "blue.png":
-                    converted[i].append(2)
+                    converted[i-1].append(2)
                 elif board[i][j].source == "empty.png":
-                    converted[i].append(0)
+                    converted[i-1].append(0)
         return converted
 
     def next_boards(self, m, turn):
         next = list()
-        for i in range(1, self.rows-1):
-            for j in range(1, self.cols-1):
+        for i in range(0, self.rows-2):
+            for j in range(1, self.cols-2):
                 board = copy.deepcopy(m.board)
                 if board[i][j] != 0:
                     board[i][j] = turn
@@ -105,14 +104,14 @@ class Board(GridLayout):
                             temp = copy.deepcopy(board)
                             add = True
                             toRotate = list()
-                            for a in range(int((self.rows-1)/2*x), int((self.rows-1)/2*(x+1))):
+                            for a in range(int((self.rows-1)/2)*x, int((self.rows-1)/2)*(x+1)):
                                 toRotate.append(list())
-                                for b in range(int((self.rows-1)/2*y), int((self.rows-1)/2*(y+1))):
-                                    toRotate[a].append(temp[a][b])
-                            rotated = numpy.rot90(toRotate)
-                            for a in range(int((self.rows-1)/2*x), int((self.rows-1)/2*(x+1))):
-                                for b in range(int((self.rows-1)/2*y), int((self.rows-1)/2*(y+1))):
-                                    temp[a][b] = rotated[a][b]
+                                for b in range(int((self.cols-1)/2)*y, int((self.cols-1)/2)*(y+1)):
+                                    toRotate[a - int((self.cols-1)/2)*x].append(temp[a][b])
+                            numpy.rot90(toRotate)
+                            for a in range(int((self.rows-1)/2)*x, int((self.rows-1)/2)*(x+1)):
+                                for b in range(int((self.rows-1)/2)*y, int((self.rows-1)/2)*(y+1)):
+                                    temp[a][b] = toRotate[a - int((self.rows-1)/2)*x][b - int((self.rows-1)/2)*y]
                             for c in next:
                                 if c.board == temp:
                                     add = False
@@ -120,10 +119,10 @@ class Board(GridLayout):
                             if add:
                                 next.append(Minimax(temp))
                             add = True
-                            rotated = numpy.rot90(toRotate, 3)
-                            for a in range(int((self.rows-1)/2*x), int((self.rows-1)/2*(x+1))):
-                                for b in range(int((self.rows-1)/2*y), int((self.rows-1)/2*(y+1))):
-                                    temp[a][b] = rotated[a][b]
+                            numpy.rot90(toRotate, 2)
+                            for a in range(int((self.rows-1)/2)*x, int((self.rows-1)/2)*(x+1)):
+                                for b in range(int((self.rows-1)/2)*y, int((self.rows-1)/2)*(y+1)):
+                                    temp[a][b] = toRotate[a - int((self.rows-1)/2)*x][b - int((self.rows-1)/2)*y]
                             for c in next:
                                 if c.board == temp:
                                     add = False
@@ -228,7 +227,7 @@ class Board(GridLayout):
         filled = 0
         found1 = False
         found2 = False
-        for i in range(1, self.rows-1):
+        for i in range(0, self.rows-2):
             count1row = 0
             count2row = 0
             count1col = 0
@@ -237,12 +236,12 @@ class Board(GridLayout):
             count2diag1 = 0
             count1diag2 = 0
             count2diag2 = 0
-            for j in range(1, self.cols-1):
+            for j in range(0, self.cols-2):
                 if board[i][j] == 1:
                     filled += 1
                     count1row += 1
                     count2row = 0
-                elif board == 2:
+                elif board[i][j] == 2:
                     filled += 1
                     count2row += 1
                     count1row = 0
@@ -258,20 +257,20 @@ class Board(GridLayout):
                 else:
                     count1col = 0
                     count2col = 0
-                if i < 3 and j < 7:
-                    if board[i-1+j][j] == 1:
+                if i + j < 6:
+                    if board[i+j][j] == 1:
                         count1diag1 += 1
                         count2diag1 = 0
-                    elif board[i-1+j][j] == 2:
+                    elif board[i+j][j] == 2:
                         count2diag1 += 1
                         count1diag1 = 0
                     else:
                         count1diag1 = 0
                         count2diag1 = 0
-                    if board[i-1+j][self.cols-2-j] == 1:
+                    if board[i+j][self.cols-3-j] == 1:
                         count1diag2 += 1
                         count2diag2 = 0
-                    elif board[i-1+j][self.cols-2-j] == 2:
+                    elif board[i+j][self.cols-3-j] == 2:
                         count2diag2 += 1
                         count1diag2 = 0
                     else:
@@ -338,9 +337,10 @@ class Board(GridLayout):
             self.add_widget(self.reset)
             self.add_widget(self.menu)
             self.add_widget(self.quit)
-        if self.tree is None:
-            self.tree = Minimax(self.convert_board(self.buttons))
-        self.create_tree(self.turn, self.tree, 3)
+        if self.players == 1:
+            if self.tree is None:
+                self.tree = Minimax(self.convert_board(self.buttons))
+            self.create_tree(self.turn, self.tree, 3)
 
     #def respond(self):
 

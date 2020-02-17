@@ -232,10 +232,14 @@ class Board(GridLayout):
             count2row = 0
             count1col = 0
             count2col = 0
-            count1diag1 = 0
-            count2diag1 = 0
-            count1diag2 = 0
-            count2diag2 = 0
+            count1diag11 = 0
+            count2diag11 = 0
+            count1diag12 = 0
+            count2diag12 = 0
+            count1diag21 = 0
+            count2diag21 = 0
+            count1diag22 = 0
+            count2diag22 = 0
             for j in range(0, self.cols-2):
                 if board[i][j] == 1:
                     filled += 1
@@ -259,26 +263,44 @@ class Board(GridLayout):
                     count2col = 0
                 if i + j < 6:
                     if board[i+j][j] == 1:
-                        count1diag1 += 1
-                        count2diag1 = 0
+                        count1diag11 += 1
+                        count2diag11 = 0
                     elif board[i+j][j] == 2:
-                        count2diag1 += 1
-                        count1diag1 = 0
+                        count2diag11 += 1
+                        count1diag11 = 0
                     else:
-                        count1diag1 = 0
-                        count2diag1 = 0
+                        count1diag11 = 0
+                        count2diag11 = 0
+                    if board[j][i+j] == 1:
+                        count1diag12 += 1
+                        count2diag12 = 0
+                    elif board[j][i+j] == 2:
+                        count2diag12 += 1
+                        count1diag12 = 0
+                    else:
+                        count1diag12 = 0
+                        count2diag12 = 0
                     if board[i+j][self.cols-3-j] == 1:
-                        count1diag2 += 1
-                        count2diag2 = 0
+                        count1diag21 += 1
+                        count2diag21 = 0
                     elif board[i+j][self.cols-3-j] == 2:
-                        count2diag2 += 1
-                        count1diag2 = 0
+                        count2diag21 += 1
+                        count1diag21 = 0
                     else:
-                        count1diag2 = 0
-                        count2diag2 = 0
-                if count1row == self.cols-3 or count1col == self.rows-3 or count1diag1 == self.rows-3 or count1diag2 == self.rows-3:
+                        count1diag21 = 0
+                        count2diag21 = 0
+                    if board[j][self.cols-3-i-j] == 1:
+                        count1diag22 += 1
+                        count2diag22 = 0
+                    elif board[j][self.cols-3-i-j] == 2:
+                        count2diag22 += 1
+                        count1diag22 = 0
+                    else:
+                        count1diag22 = 0
+                        count2diag22 = 0
+                if count1row == self.cols-3 or count1col == self.rows-3 or count1diag11 == self.rows-3 or count1diag12 == self.rows-3 or count1diag21 == self.rows-3 or count1diag22 == self.rows-3:
                     found1 = True
-                elif count2row == self.cols-3 or count2col == self.rows-3 or count2diag1 == self.rows-3 or count2diag2 == self.rows-3:
+                elif count2row == self.cols-3 or count2col == self.rows-3 or count2diag11 == self.rows-3 or count2diag12 == self.rows-3 or count2diag21 == self.rows-3 or count2diag22 == self.rows-3:
                     found2 = True
                 if found1 and found2:
                     break

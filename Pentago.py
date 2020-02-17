@@ -144,6 +144,31 @@ class Board(GridLayout):
             self.add_widget(button)
 
     def evaluate_board(self, board):
+        value = 0
+        sequence_count_r = 0
+        sequence_count_c = 0
+        for i in range(len(board)):
+            for j in range(len(board[i])):
+                if j != 0:
+                    if board[i][j] == board[i][j-1] != 0:
+                        sequence_count_r += 1
+                    else:
+                        if board[i][j-1] == 1:
+                            value += 2**sequence_count_r
+                        elif board[i][j-1] == 2:
+                            value -= 2**sequence_count_r
+                        sequence_count_r = 1
+                    if board[j][i] == board[j-1][i] != 0:
+                        sequence_count_c += 1
+                    else:
+                        if board[j-1][i] == 1:
+                            value += 2**sequence_count_c
+                        elif board[j-1][i] == 2:
+                            value -= 2**sequence_count_c
+                        sequence_count_c = 1
+                elif board[i][j] != 0:
+                    sequence_count_r = 1
+                    sequence_count_c = 1
 
 
     def create_tree(self, turn, current, depth):

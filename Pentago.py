@@ -4,7 +4,16 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.image import Image
 from kivy.app import App
+import copy
+import numpy
 import sys
+
+
+class Minimax:
+    def __init__(self, board, next=None):
+        self.board = board
+        self.value = 0
+        self.next = next
 
 
 class ImageButton(ButtonBehavior, Image):
@@ -21,6 +30,7 @@ class Board(GridLayout):
         self.rows = 8
         self.cols = 8
         self.buttons = list()
+        self.tree = None
         self.reset = Button(text="Click to play again")
         self.reset.bind(on_press=self.reset_board)
         self.menu = Button(text="Click to return to menu")
@@ -29,7 +39,7 @@ class Board(GridLayout):
         self.quit.bind(on_press=self.quit_game)
         self.rotatable = False
         self.players = 0
-        self.player = 1
+        self.turn = 1
         for i in range(self.rows):
             self.buttons.append(list())
             for j in range(self.cols):
@@ -67,6 +77,61 @@ class Board(GridLayout):
         self.buttons[0][self.cols-2].cw = False
         self.go_menu()
 
+    @staticmethod
+    def convert_board(self, board=None):
+        if board == None:
+            board = self.board
+        converted = list()
+        for i in range(1, board.length()-1):
+            converted.append(list())
+            for j in range(1, board[i].length()-1):
+                if board[i][j].source == "red.png":
+                    converted[i].append(1)
+                elif board[i][j].source == "blue.png":
+                    converted[i].append(2)
+                elif board[i][j].source == "empty.png":
+                    converted[i].append(0)
+        return converted
+
+    def next_boards(self, m, turn):
+        next = list()
+        for i in range(1, self.rows-1):
+            for j in range(1, self.cols-1):
+                board = copy.deepcopy(m.board)
+                if board[i][j] != 0:
+                    board[i][j] = turn
+                    for x in range(2):
+                        for y in range(2):
+                            temp = copy.deepcopy(board)
+                            add = True
+                            toRotate = list()
+                            for a in range(int((self.rows-1)/2*x), int((self.rows-1)/2*(x+1))):
+                                toRotate.append(list())
+                                for b in range(int((self.rows-1)/2*y), int((self.rows-1)/2*(y+1))):
+                                    toRotate[a].append(temp[a][b])
+                            rotated = numpy.rot90(toRotate)
+                            for a in range(int((self.rows-1)/2*x), int((self.rows-1)/2*(x+1))):
+                                for b in range(int((self.rows-1)/2*y), int((self.rows-1)/2*(y+1))):
+                                    temp[a][b] = rotated[a][b]
+                            for c in next:
+                                if c.board == temp:
+                                    add = False
+                                    break
+                            if add:
+                                next.append(Minimax(temp))
+                            add = True
+                            rotated = numpy.rot90(toRotate, 3)
+                            for a in range(int((self.rows-1)/2*x), int((self.rows-1)/2*(x+1))):
+                                for b in range(int((self.rows-1)/2*y), int((self.rows-1)/2*(y+1))):
+                                    temp[a][b] = rotated[a][b]
+                            for c in next:
+                                if c.board == temp:
+                                    add = False
+                                    break
+                            if add:
+                                next.append(Minimax(temp))
+        return next
+
     def quit_game(self, touch):
         sys.exit()
 
@@ -78,6 +143,45 @@ class Board(GridLayout):
             button.bind(on_press=self.reset_board)
             self.add_widget(button)
 
+    def evaluate_board(self, board):
+
+
+    def create_tree(self, turn, current, depth):
+        winner = self.win()
+        if winner == "Tie!":
+            current.value = 0
+        elif winner == "Player 1 wins!":
+            current.value = float("inf")
+        elif winner == "Player 2 wins!":
+            current.value = float("-inf")
+        elif depth == 0:
+            current.value = self.evaluate_board(current.board)
+        else:
+            if turn == 1:
+                current.next = self.next_boards(current, 1)
+            else:
+                current.next = self.next_boards(current, 2)
+            for i in current.next:
+                if turn == 1:
+                    self.create_tree(2, i, depth-1)
+                else:
+                    self.create_tree(1, i, depth - 1)
+            first = True
+            if turn == 2:
+                for i in current.next:
+                    if first:
+                        current.value = i.value
+                        first = False
+                    elif current.value > i.value:
+                        current.value = i.value
+            else:
+                for i in current.next:
+                    if first:
+                        current.value = i.value
+                        first = False
+                    elif current.value < i.value:
+                        current.value = i.value
+
     def reset_board(self, touch):
         if touch.text == "1":
             self.players = 1
@@ -85,7 +189,7 @@ class Board(GridLayout):
             self.players = 2
         self.clear_widgets()
         self.rotatable = False
-        self.player = 1
+        self.turn = 1
         for i in range(self.rows):
             for j in range(self.cols):
                 if self.buttons[i][j].source == "blue.png" or self.buttons[i][j].source == "red.png":
@@ -93,7 +197,9 @@ class Board(GridLayout):
                     self.buttons[i][j].disabled = False
                 self.add_widget(self.buttons[i][j])
 
-    def win(self):
+    def win(self, board=None):
+        if board is None:
+            board = self.convert_board(self.buttons)
         filled = 0
         found1 = False
         found2 = False
@@ -107,40 +213,40 @@ class Board(GridLayout):
             count1diag2 = 0
             count2diag2 = 0
             for j in range(1, self.cols-1):
-                if self.buttons[i][j].source == "red.png":
+                if board[i][j] == 1:
                     filled += 1
                     count1row += 1
                     count2row = 0
-                elif self.buttons[i][j].source == "blue.png":
+                elif board == 2:
                     filled += 1
                     count2row += 1
                     count1row = 0
                 else:
                     count1row = 0
                     count2row = 0
-                if self.buttons[j][i].source == "red.png":
+                if board[j][i] == 1:
                     count1col += 1
                     count2col = 0
-                elif self.buttons[j][i].source == "blue.png":
+                elif board[j][i] == 2:
                     count2col += 1
                     count1col = 0
                 else:
                     count1col = 0
                     count2col = 0
                 if i < 3 and j < 7:
-                    if self.buttons[i-1+j][j].source == "red.png":
+                    if board[i-1+j][j] == 1:
                         count1diag1 += 1
                         count2diag1 = 0
-                    elif self.buttons[i-1+j][j].source == "blue.png":
+                    elif board[i-1+j][j] == 2:
                         count2diag1 += 1
                         count1diag1 = 0
                     else:
                         count1diag1 = 0
                         count2diag1 = 0
-                    if self.buttons[i-1+j][self.cols-2-j].source == "red.png":
+                    if board[i-1+j][self.cols-2-j] == 1:
                         count1diag2 += 1
                         count2diag2 = 0
-                    elif self.buttons[i-1+j][self.cols-2-j].source == "blue.png":
+                    elif board[i-1+j][self.cols-2-j] == 2:
                         count2diag2 += 1
                         count1diag2 = 0
                     else:
@@ -155,23 +261,11 @@ class Board(GridLayout):
             if found1 and found2:
                 break
         if found1 and found2 or filled == (self.rows-2) * (self.cols-2):
-            self.clear_widgets()
-            self.add_widget(Label(text="Tie!"))
-            self.add_widget(self.reset)
-            self.add_widget(self.menu)
-            self.add_widget(self.quit)
+            return "Tie!"
         elif found1:
-            self.clear_widgets()
-            self.add_widget(Label(text="Player 1 wins!"))
-            self.add_widget(self.reset)
-            self.add_widget(self.menu)
-            self.add_widget(self.quit)
+            return "Player 1 wins!"
         elif found2:
-            self.clear_widgets()
-            self.add_widget(Label(text="Player 2 wins!"))
-            self.add_widget(self.reset)
-            self.add_widget(self.menu)
-            self.add_widget(self.quit)
+            return "Player 2 wins!"
 
     def rotate(self, touch):
         if self.rotatable:
@@ -204,15 +298,27 @@ class Board(GridLayout):
 
     def place(self, touch):
         if not touch.disabled and not self.rotatable:
-            if self.player == 1:
+            if self.turn == 1:
                 touch.source = "red.png"
-                self.player = 2
+                self.turn = 2
             else:
                 touch.source = "blue.png"
-                self.player = 1
+                self.turn = 1
             touch.disabled = True
             self.rotatable = True
-        self.win()
+        win = self.win()
+        if win is not None:
+            self.clear_widgets()
+            self.add_widget(Label(text=win))
+            self.add_widget(self.reset)
+            self.add_widget(self.menu)
+            self.add_widget(self.quit)
+        if self.tree is None:
+            self.tree = Minimax(self.convert_board(self.buttons))
+        self.create_tree(self.turn, self.tree, 3)
+
+    #def respond(self):
+
 
 
 class Game(App):

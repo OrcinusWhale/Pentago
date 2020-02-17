@@ -95,9 +95,9 @@ class Board(GridLayout):
     def next_boards(self, m, turn):
         next = list()
         for i in range(0, self.rows-2):
-            for j in range(1, self.cols-2):
+            for j in range(0, self.cols-2):
                 board = copy.deepcopy(m.board)
-                if board[i][j] != 0:
+                if board[i][j] == 0:
                     board[i][j] = turn
                     for x in range(2):
                         for y in range(2):
@@ -146,32 +146,78 @@ class Board(GridLayout):
         value = 0
         sequence_count_r = 0
         sequence_count_c = 0
+        sequence_count_d11 = 0
+        sequence_count_d12 = 0
+        sequence_count_d21 = 0
+        sequence_count_d22 = 0
         for i in range(len(board)):
             for j in range(len(board[i])):
                 if j != 0:
-                    if board[i][j] == board[i][j-1] != 0:
+                    if board[i][j] == board[i][j-1] != 0 or board[i][j] != 0 and sequence_count_r == 0:
                         sequence_count_r += 1
                     else:
                         if board[i][j-1] == 1:
                             value += 2**sequence_count_r
                         elif board[i][j-1] == 2:
                             value -= 2**sequence_count_r
-                        sequence_count_r = 1
-                    if board[j][i] == board[j-1][i] != 0:
+                        sequence_count_r = 0
+                    if board[j][i] == board[j-1][i] != 0 or board[i][j] != 0 and sequence_count_c == 0:
                         sequence_count_c += 1
                     else:
                         if board[j-1][i] == 1:
                             value += 2**sequence_count_c
                         elif board[j-1][i] == 2:
                             value -= 2**sequence_count_c
+                        sequence_count_c = 0
+                    if i+j < 6:
+                        if board[i+j][j] == board[i+j-1][j-1] or board[i+j][j] != 0 and sequence_count_d11 == 0:
+                            sequence_count_d11 += 1
+                        else:
+                            if board[i+j-1][j-1] == 1:
+                                value += 2**sequence_count_d11
+                            elif board[i+j-1][j-1] == 2:
+                                value -= 2**sequence_count_d11
+                            sequence_count_d11 = 0
+                        if board[j][i+j] == board[j-1][i+j-1] or board[i][i+j] != 0 and sequence_count_d12 == 0:
+                            sequence_count_d12 += 1
+                        else:
+                            if board[j-1][i+j-1] == 1:
+                                value += 2**sequence_count_d12
+                            elif board[j-1][i+j-1] == 2:
+                                value -= 2**sequence_count_d12
+                            sequence_count_d12 = 0
+                        if board[i+j][self.cols-3-j] == board[i+j-1][self.cols-3-j-1] or board[i+j][self.cols-3-j] != 0 and sequence_count_d21 == 0:
+                            sequence_count_d21 += 1
+                        else:
+                            if board[i+j-1][self.cols-3-j-1] == 1:
+                                value += 2**sequence_count_d21
+                            elif board[i+j-1][self.cols-3-j-1] == 2:
+                                value -= 2**sequence_count_d21
+                            sequence_count_d21 = 0
+                        if board[j][self.cols-3-i-j] == board[j-1][self.cols-3-i-j-1] or board[j][self.cols-3-i-j] != 0 and sequence_count_d22 == 0:
+                            sequence_count_d22 += 1
+                        else:
+                            if board[j-1][self.cols-3-i-j-1] == 1:
+                                value += 2**sequence_count_d22
+                            elif board[j-1][self.cols-3-i-j-1] == 2:
+                                value -= 2**sequence_count_d22
+                            sequence_count_d22 = 0
+                else:
+                    if board[i][j] != 0:
+                        sequence_count_r = 1
                         sequence_count_c = 1
-                elif board[i][j] != 0:
-                    sequence_count_r = 1
-                    sequence_count_c = 1
-
+                    if board[i+j][j] != 0:
+                        sequence_count_d11 = 1
+                    if board[j][i+j] != 0:
+                        sequence_count_d12 = 1
+                    if board[i+j][self.cols-3-j] != 0:
+                        sequence_count_d21 = 1
+                    if board[j][self.cols-3-i-j] != 0:
+                        sequence_count_d22 = 1
+        return value
 
     def create_tree(self, turn, current, depth):
-        winner = self.win()
+        winner = self.win(current.board)
         if winner == "Tie!":
             current.value = 0
         elif winner == "Player 1 wins!":
@@ -182,12 +228,12 @@ class Board(GridLayout):
             current.value = self.evaluate_board(current.board)
         else:
             if turn == 1:
-                current.next = self.next_boards(current, 1)
-            else:
                 current.next = self.next_boards(current, 2)
+            if turn == 2:
+                current.next = self.next_boards(current, 1)
             for i in current.next:
                 if turn == 1:
-                    self.create_tree(2, i, depth-1)
+                    self.create_tree(2, i, depth - 1)
                 else:
                     self.create_tree(1, i, depth - 1)
             first = True
@@ -196,14 +242,14 @@ class Board(GridLayout):
                     if first:
                         current.value = i.value
                         first = False
-                    elif current.value > i.value:
+                    elif current.value < i.value:
                         current.value = i.value
             else:
                 for i in current.next:
                     if first:
                         current.value = i.value
                         first = False
-                    elif current.value < i.value:
+                    elif current.value > i.value:
                         current.value = i.value
 
     def reset_board(self, touch):
@@ -340,13 +386,16 @@ class Board(GridLayout):
             self.rotatable = False
             self.win()
             if self.players == 1:
+                self.tree = Minimax(self.convert_board(self.buttons))
+                self.create_tree(self.turn, self.tree, 2)
                 self.respond()
 
     def place(self, touch):
         if not touch.disabled and not self.rotatable:
             if self.turn == 1:
                 touch.source = "red.png"
-                self.turn = 2
+                if self.players == 2:
+                    self.turn = 2
             else:
                 touch.source = "blue.png"
                 self.turn = 1
@@ -359,13 +408,29 @@ class Board(GridLayout):
             self.add_widget(self.reset)
             self.add_widget(self.menu)
             self.add_widget(self.quit)
-        if self.players == 1:
-            if self.tree is None:
-                self.tree = Minimax(self.convert_board(self.buttons))
-            self.create_tree(self.turn, self.tree, 3)
 
-    #def respond(self):
-
+    def respond(self):
+        first = True
+        min_value = None
+        for i in self.tree.next:
+            if first:
+                min_value = i
+                first = False
+            else:
+                if i.value < min_value.value:
+                    min_value = i
+        self.tree = min_value
+        for i in range(1, len(self.buttons)-1):
+            for j in range(1, len(self.buttons[i])-1):
+                if self.tree.board[i-1][j-1] == 0:
+                    self.buttons[i][j].source = "empty.png"
+                    self.buttons[i][j].disabled = False
+                elif self.tree.board[i-1][j-1] == 1:
+                    self.buttons[i][j].source = "red.png"
+                    self.buttons[i][j].disabled = True
+                elif self.tree.board[i-1][j-1] == 2:
+                    self.buttons[i][j].source = "blue.png"
+                    self.buttons[i][j].disabled = True
 
 
 class Game(App):

@@ -1,9 +1,12 @@
-from kivy.uix.gridlayout import GridLayout
+from kivy.uix.layout import Layout
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.image import Image
+from kivy.uix.widget import Widget
+from kivy.graphics import *
 from kivy.app import App
+from kivy.core.window import Window
 import copy
 import numpy
 import sys
@@ -15,21 +18,26 @@ class Minimax:
         self.value = 0
         self.next = next
 
+
 class IntPointer:
     def __init__(self, num=0):
         self. num = num
 
-class ImageButton(ButtonBehavior, Image):
-    def __init__(self, row, col):
-        Image.__init__(self)
+
+class WidgetButton(ButtonBehavior, Widget):
+    def __init__(self, pos, size, row, col, mark=None):
+        Widget.__init__(self)
         ButtonBehavior.__init__(self)
+        self.pos = pos
+        self.size = size
         self.row = row
         self.col = col
+        self.mark = mark
 
 
-class Board(GridLayout):
+class Board(Layout):
     def __init__(self):
-        GridLayout.__init__(self)
+        Layout.__init__(self)
         self.rows = 8
         self.cols = 8
         self.buttons = list()
@@ -43,42 +51,66 @@ class Board(GridLayout):
         self.rotatable = False
         self.players = 0
         self.turn = 1
-        for i in range(self.rows):
+        for i, y in enumerate(range(0, Window.size[1], int(Window.size[1]/8))):
             self.buttons.append(list())
-            for j in range(self.cols):
-                self.buttons[i].append(ImageButton(i, j))
+            for j, x in enumerate(range(0, Window.size[0], int(Window.size[0]/8))):
+                self.buttons[i].append(WidgetButton((x, y), (Window.size[0] / 8, Window.size[1] / 8), i, j))
                 if 0 < i < self.rows-1 and 0 < j < self.cols - 1:
                     self.buttons[i][j].bind(on_press=self.place)
-                    self.buttons[i][j].source = "empty.png"
+                    self.buttons[i][j].mark = "empty"
                 elif i in [0, self.rows-1] and j in [1, self.cols-2] or i in [1, self.rows-2] and j in [0, self.cols-1]:
                     self.buttons[i][j].bind(on_press=self.rotate)
-                else:
-                    self.buttons[i][j].source = "board.png"
-        self.buttons[0][1].source = "right.png"
+                self.draw(self.buttons[i][j])
+        self.buttons[0][1].mark = "right"
+        self.draw(self.buttons[0][1])
         self.buttons[0][1].start_row = self.buttons[1][0].start_row = 1
         self.buttons[0][1].start_col = self.buttons[1][0].start_col = 1
         self.buttons[0][1].cw = True
-        self.buttons[1][0].source = "down.png"
+        self.buttons[1][0].mark = "down"
+        self.draw(self.buttons[1][0])
         self.buttons[1][0].cw = False
-        self.buttons[self.rows-2][0].source = "up.png"
+        self.buttons[self.rows-2][0].mark = "up"
+        self.draw(self.buttons[self.rows-2][0])
         self.buttons[self.rows-2][0].start_row = self.buttons[self.rows-1][1].start_row = int((self.rows-2)/2)+1
         self.buttons[self.rows-2][0].start_col = self.buttons[self.rows-1][1].start_col = 1
         self.buttons[self.rows-2][0].cw = True
-        self.buttons[self.rows-1][1].source = "right.png"
+        self.buttons[self.rows-1][1].mark = "right"
+        self.draw(self.buttons[self.rows-1][1])
         self.buttons[self.rows-1][1].cw = False
-        self.buttons[self.rows-1][self.cols-2].source = "left.png"
+        self.buttons[self.rows-1][self.cols-2].mark = "left"
+        self.draw(self.buttons[self.rows-1][self.cols-2])
         self.buttons[self.rows-1][self.cols-2].start_row = self.buttons[self.rows-2][self.cols-1].start_row = int((self.rows-2)/2)+1
         self.buttons[self.rows-1][self.cols-2].start_col = self.buttons[self.rows-2][self.cols-1].start_col = int((self.cols-2)/2)+1
         self.buttons[self.rows-1][self.cols-2].cw = True
-        self.buttons[self.rows-2][self.cols-1].source = "up.png"
+        self.buttons[self.rows-2][self.cols-1].mark = "up"
+        self.draw(self.buttons[self.rows-2][self.cols-1])
         self.buttons[self.rows-2][self.cols-1].cw = False
-        self.buttons[1][self.cols-1].source = "down.png"
+        self.buttons[1][self.cols-1].mark = "down"
+        self.draw(self.buttons[1][self.cols-1])
         self.buttons[1][self.cols-1].start_row = self.buttons[0][self.cols-2].start_row = 1
         self.buttons[1][self.cols-1].start_col = self.buttons[0][self.cols-2].start_col = int((self.cols-2)/2)+1
         self.buttons[1][self.cols-1].cw = True
-        self.buttons[0][self.cols-2].source = "left.png"
+        self.buttons[0][self.cols-2].mark = "left"
+        self.draw(self.buttons[0][self.cols-2])
         self.buttons[0][self.cols-2].cw = False
         self.go_menu()
+
+    def draw(self, button):
+        button.canvas.clear()
+        with button.canvas:
+            Color(84/255, 154/255, 119/255)
+            Rectangle(pos=button.pos, size=button.size)
+            d = button.size[1]
+            if button.mark == "empty":
+                Color(1, 1, 1)
+                Ellipse(Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d)))
+            elif button.mark == "red":
+                Color(1, 0, 0)
+                Ellipse(Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d)))
+            elif button.mark == "blue":
+                Color(0, 0, 1)
+                Ellipse(Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d)))
+
 
     def convert_board(self, board=None):
         if board is None:
@@ -87,11 +119,11 @@ class Board(GridLayout):
         for i in range(1, len(board)-1):
             converted.append(list())
             for j in range(1, len(board[i])-1):
-                if board[i][j].source == "red.png":
+                if board[i][j].mark == "red":
                     converted[i-1].append(1)
-                elif board[i][j].source == "blue.png":
+                elif board[i][j].mark == "blue":
                     converted[i-1].append(2)
-                elif board[i][j].source == "empty.png":
+                elif board[i][j].mark == "empty":
                     converted[i-1].append(0)
         return converted
 
@@ -133,9 +165,12 @@ class Board(GridLayout):
 
     def go_menu(self, touch=None):
         self.clear_widgets()
-        self.add_widget(Label(text="How many players?"))
+        label = Label(text="How many players?", font_size="50sp")
+        label.pos = (Window.size[0]*1/2 - label.size[0]/2, Window.size[1]*2/3 - label.size[1]/2)
+        self.add_widget(label)
         for i in range(1, 3):
             button = Button(text=str(i))
+            button.pos = (Window.size[0]*i/3 - button.size[0]/2, Window.size[1]*1/3 - button.size[1]/2)
             button.bind(on_press=self.reset_board)
             self.add_widget(button)
 
@@ -225,10 +260,12 @@ class Board(GridLayout):
         self.clear_widgets()
         self.rotatable = False
         self.turn = 1
+        self.draw(self.buttons[0][0])
         for i in range(self.rows):
             for j in range(self.cols):
-                if self.buttons[i][j].source == "blue.png" or self.buttons[i][j].source == "red.png":
-                    self.buttons[i][j].source = "empty.png"
+                if self.buttons[i][j].mark == "blue" or self.buttons[i][j].mark == "red":
+                    self.buttons[i][j].mark = "empty"
+                    self.draw(self.buttons[i][j])
                     self.buttons[i][j].disabled = False
                 self.add_widget(self.buttons[i][j])
 
@@ -293,25 +330,33 @@ class Board(GridLayout):
         if self.rotatable:
             for i in range(int((self.rows-2)/4)):
                 for j in range(i, int((self.cols-2)/2)-1-i):
-                    temp_s = self.buttons[touch.start_row+i][touch.start_col+i+j].source
+                    temp_s = self.buttons[touch.start_row+i][touch.start_col+i+j].mark
                     temp_d = self.buttons[touch.start_row+i][touch.start_col+i+j].disabled
                     if touch.cw:
-                        self.buttons[touch.start_row+i][touch.start_col+i+j].source = self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].source
+                        self.buttons[touch.start_row+i][touch.start_col+i+j].mark = self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].mark
+                        self.draw(self.buttons[touch.start_row+i][touch.start_col+i+j])
                         self.buttons[touch.start_row+i][touch.start_col+i+j].disabled = self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].disabled
-                        self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].source = self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j].source
+                        self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].mark = self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j].mark
+                        self.draw(self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i])
                         self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].disabled = self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j].disabled
-                        self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j].source = self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i].source
+                        self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j].mark = self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i].mark
+                        self.draw(self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j])
                         self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j].disabled = self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i].disabled
-                        self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i].source = temp_s
+                        self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i].mark = temp_s
+                        self.draw(self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i])
                         self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i].disabled = temp_d
                     else:
-                        self.buttons[touch.start_row+i][touch.start_col+i+j].source = self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i].source
+                        self.buttons[touch.start_row+i][touch.start_col+i+j].mark = self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i].mark
+                        self.draw(self.buttons[touch.start_row+i][touch.start_col+i+j])
                         self.buttons[touch.start_row+i][touch.start_col+i+j].disabled = self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i].disabled
-                        self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i].source = self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j].source
+                        self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i].mark = self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j].mark
+                        self.draw(self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i])
                         self.buttons[touch.start_row+i+j][touch.start_col+int((self.cols-2)/2)-1-i].disabled = self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j].disabled
-                        self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j].source = self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].source
+                        self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j].mark = self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].mark
+                        self.draw(self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j])
                         self.buttons[touch.start_row+int((self.rows-2)/2)-1-i][touch.start_col+int((self.cols-2)/2)-1-i-j].disabled = self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].disabled
-                        self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].source = temp_s
+                        self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].mark = temp_s
+                        self.draw(self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i])
                         self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].disabled = temp_d
             self.rotatable = False
             win = self.win()
@@ -329,14 +374,15 @@ class Board(GridLayout):
     def place(self, touch):
         if not touch.disabled and not self.rotatable:
             if self.turn == 1:
-                touch.source = "red.png"
+                touch.mark = "red"
                 if self.players == 2:
                     self.turn = 2
             else:
-                touch.source = "blue.png"
+                touch.mark = "blue"
                 self.turn = 1
             touch.disabled = True
             self.rotatable = True
+            self.draw(touch)
         win = self.win()
         if win is not None:
             self.clear_widgets()
@@ -359,14 +405,15 @@ class Board(GridLayout):
         for i in range(1, len(self.buttons)-1):
             for j in range(1, len(self.buttons[i])-1):
                 if self.tree.board[i-1][j-1] == 0:
-                    self.buttons[i][j].source = "empty.png"
+                    self.buttons[i][j].mark = "empty"
                     self.buttons[i][j].disabled = False
                 elif self.tree.board[i-1][j-1] == 1:
-                    self.buttons[i][j].source = "red.png"
+                    self.buttons[i][j].mark = "red"
                     self.buttons[i][j].disabled = True
                 elif self.tree.board[i-1][j-1] == 2:
-                    self.buttons[i][j].source = "blue.png"
+                    self.buttons[i][j].mark = "blue"
                     self.buttons[i][j].disabled = True
+                self.draw(self.buttons[i][j])
         win = self.win()
         if win is not None:
             self.clear_widgets()

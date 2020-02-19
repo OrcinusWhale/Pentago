@@ -15,6 +15,9 @@ class Minimax:
         self.value = 0
         self.next = next
 
+class IntPointer:
+    def __init__(self, num=0):
+        self. num = num
 
 class ImageButton(ButtonBehavior, Image):
     def __init__(self, row, col):
@@ -142,78 +145,46 @@ class Board(GridLayout):
             button.bind(on_press=self.reset_board)
             self.add_widget(button)
 
+    def evaluate_board_help(self, board, i, j, count, value):
+        if board[i][j] == board[i][j - 1] != 0 or board[i][j] != 0 and count.num == 0:
+            count.num += 1
+        else:
+            if board[i][j - 1] == 1:
+                value.num += 2 ** count.num
+            elif board[i][j - 1] == 2:
+                value.num -= 2 ** count.num
+            count.num = 0
+
     def evaluate_board(self, board):
-        value = 0
-        sequence_count_r = 0
-        sequence_count_c = 0
-        sequence_count_d11 = 0
-        sequence_count_d12 = 0
-        sequence_count_d21 = 0
-        sequence_count_d22 = 0
+        value = IntPointer()
+        sequence_count_r = IntPointer()
+        sequence_count_c = IntPointer()
+        sequence_count_d11 = IntPointer()
+        sequence_count_d12 = IntPointer()
+        sequence_count_d21 = IntPointer()
+        sequence_count_d22 = IntPointer()
         for i in range(len(board)):
             for j in range(len(board[i])):
                 if j != 0:
-                    if board[i][j] == board[i][j-1] != 0 or board[i][j] != 0 and sequence_count_r == 0:
-                        sequence_count_r += 1
-                    else:
-                        if board[i][j-1] == 1:
-                            value += 2**sequence_count_r
-                        elif board[i][j-1] == 2:
-                            value -= 2**sequence_count_r
-                        sequence_count_r = 0
-                    if board[j][i] == board[j-1][i] != 0 or board[i][j] != 0 and sequence_count_c == 0:
-                        sequence_count_c += 1
-                    else:
-                        if board[j-1][i] == 1:
-                            value += 2**sequence_count_c
-                        elif board[j-1][i] == 2:
-                            value -= 2**sequence_count_c
-                        sequence_count_c = 0
+                    self.evaluate_board_help(board, i, j, sequence_count_r, value)
+                    self.evaluate_board_help(board, i, j, sequence_count_c, value)
                     if i+j < 6:
-                        if board[i+j][j] == board[i+j-1][j-1] or board[i+j][j] != 0 and sequence_count_d11 == 0:
-                            sequence_count_d11 += 1
-                        else:
-                            if board[i+j-1][j-1] == 1:
-                                value += 2**sequence_count_d11
-                            elif board[i+j-1][j-1] == 2:
-                                value -= 2**sequence_count_d11
-                            sequence_count_d11 = 0
-                        if board[j][i+j] == board[j-1][i+j-1] or board[i][i+j] != 0 and sequence_count_d12 == 0:
-                            sequence_count_d12 += 1
-                        else:
-                            if board[j-1][i+j-1] == 1:
-                                value += 2**sequence_count_d12
-                            elif board[j-1][i+j-1] == 2:
-                                value -= 2**sequence_count_d12
-                            sequence_count_d12 = 0
-                        if board[i+j][self.cols-3-j] == board[i+j-1][self.cols-3-j-1] or board[i+j][self.cols-3-j] != 0 and sequence_count_d21 == 0:
-                            sequence_count_d21 += 1
-                        else:
-                            if board[i+j-1][self.cols-3-j-1] == 1:
-                                value += 2**sequence_count_d21
-                            elif board[i+j-1][self.cols-3-j-1] == 2:
-                                value -= 2**sequence_count_d21
-                            sequence_count_d21 = 0
-                        if board[j][self.cols-3-i-j] == board[j-1][self.cols-3-i-j-1] or board[j][self.cols-3-i-j] != 0 and sequence_count_d22 == 0:
-                            sequence_count_d22 += 1
-                        else:
-                            if board[j-1][self.cols-3-i-j-1] == 1:
-                                value += 2**sequence_count_d22
-                            elif board[j-1][self.cols-3-i-j-1] == 2:
-                                value -= 2**sequence_count_d22
-                            sequence_count_d22 = 0
+                        self.evaluate_board_help(board, i+j, j, sequence_count_d11, value)
+                        self.evaluate_board_help(board, j, i+j, sequence_count_d12, value)
+                        self.evaluate_board_help(board, i+j, self.cols-3-j, sequence_count_d21, value)
+                        self.evaluate_board_help(board, j, self.cols-3-i-j, sequence_count_d22, value)
                 else:
                     if board[i][j] != 0:
-                        sequence_count_r = 1
-                        sequence_count_c = 1
+                        sequence_count_r.num = 1
+                        sequence_count_c.num = 1
                     if board[i+j][j] != 0:
-                        sequence_count_d11 = 1
+                        sequence_count_d11.num = 1
                     if board[j][i+j] != 0:
-                        sequence_count_d12 = 1
+                        sequence_count_d12.num = 1
                     if board[i+j][self.cols-3-j] != 0:
-                        sequence_count_d21 = 1
+                        sequence_count_d21.num = 1
                     if board[j][self.cols-3-i-j] != 0:
-                        sequence_count_d22 = 1
+                        sequence_count_d22.num = 1
         return value
 
     def create_tree(self, turn, current, depth):
@@ -267,83 +238,46 @@ class Board(GridLayout):
                     self.buttons[i][j].disabled = False
                 self.add_widget(self.buttons[i][j])
 
+    def win_help(self, board, filled, i, j, count1, count2):
+        if board[i][j] == 1:
+            filled.num += 1
+            count1.num += 1
+            count2.num = 0
+        elif board[i][j] == 2:
+            filled.num += 1
+            count2.num += 1
+            count1.num = 0
+        else:
+            count1.num = 0
+            count2.num = 0
+
     def win(self, board=None):
         if board is None:
             board = self.convert_board(self.buttons)
-        filled = 0
+        filled = IntPointer()
         found1 = False
         found2 = False
         for i in range(0, self.rows-2):
-            count1row = 0
-            count2row = 0
-            count1col = 0
-            count2col = 0
-            count1diag11 = 0
-            count2diag11 = 0
-            count1diag12 = 0
-            count2diag12 = 0
-            count1diag21 = 0
-            count2diag21 = 0
-            count1diag22 = 0
-            count2diag22 = 0
+            count1row = IntPointer()
+            count2row = IntPointer()
+            count1col = IntPointer()
+            count2col = IntPointer()
+            count1diag11 = IntPointer()
+            count2diag11 = IntPointer()
+            count1diag12 = IntPointer()
+            count2diag12 = IntPointer()
+            count1diag21 = IntPointer()
+            count2diag21 = IntPointer()
+            count1diag22 = IntPointer()
+            count2diag22 = IntPointer()
             for j in range(0, self.cols-2):
-                if board[i][j] == 1:
-                    filled += 1
-                    count1row += 1
-                    count2row = 0
-                elif board[i][j] == 2:
-                    filled += 1
-                    count2row += 1
-                    count1row = 0
-                else:
-                    count1row = 0
-                    count2row = 0
-                if board[j][i] == 1:
-                    count1col += 1
-                    count2col = 0
-                elif board[j][i] == 2:
-                    count2col += 1
-                    count1col = 0
-                else:
-                    count1col = 0
-                    count2col = 0
+                self.win_help(board, filled, i, j, count1row, count2row)
+                self.win_help(board, filled, j, i, count1col, count2col)
                 if i + j < 6:
-                    if board[i+j][j] == 1:
-                        count1diag11 += 1
-                        count2diag11 = 0
-                    elif board[i+j][j] == 2:
-                        count2diag11 += 1
-                        count1diag11 = 0
-                    else:
-                        count1diag11 = 0
-                        count2diag11 = 0
-                    if board[j][i+j] == 1:
-                        count1diag12 += 1
-                        count2diag12 = 0
-                    elif board[j][i+j] == 2:
-                        count2diag12 += 1
-                        count1diag12 = 0
-                    else:
-                        count1diag12 = 0
-                        count2diag12 = 0
-                    if board[i+j][self.cols-3-j] == 1:
-                        count1diag21 += 1
-                        count2diag21 = 0
-                    elif board[i+j][self.cols-3-j] == 2:
-                        count2diag21 += 1
-                        count1diag21 = 0
-                    else:
-                        count1diag21 = 0
-                        count2diag21 = 0
-                    if board[j][self.cols-3-i-j] == 1:
-                        count1diag22 += 1
-                        count2diag22 = 0
-                    elif board[j][self.cols-3-i-j] == 2:
-                        count2diag22 += 1
-                        count1diag22 = 0
-                    else:
-                        count1diag22 = 0
-                        count2diag22 = 0
+                    self.win_help(board, filled, i+j, j, count1diag11, count2diag11)
+                    self.win_help(board, filled, j, i+j, count1diag12, count2diag12)
+                    self.win_help(board, filled, i+j, self.cols-3-j, count1diag21, count2diag21)
+                    self.win_help(board, filled, j, self.cols-3-i-j, count1diag22, count2diag22)
                 if count1row == self.cols-3 or count1col == self.rows-3 or count1diag11 == self.rows-3 or count1diag12 == self.rows-3 or count1diag21 == self.rows-3 or count1diag22 == self.rows-3:
                     found1 = True
                 elif count2row == self.cols-3 or count2col == self.rows-3 or count2diag11 == self.rows-3 or count2diag12 == self.rows-3 or count2diag21 == self.rows-3 or count2diag22 == self.rows-3:

@@ -95,6 +95,18 @@ class Board(GridLayout):
                     converted[i-1].append(0)
         return converted
 
+    def next_boards_help(self, next, temp, toRotate, x, y):
+        for a in range(int((self.rows - 1) / 2) * x, int((self.rows - 1) / 2) * (x + 1)):
+            for b in range(int((self.rows - 1) / 2) * y, int((self.rows - 1) / 2) * (y + 1)):
+                temp[a][b] = toRotate[a - int((self.rows - 1) / 2) * x][b - int((self.rows - 1) / 2) * y]
+        add = True
+        for c in next:
+            if c.board == temp:
+                add = False
+                break
+        if add:
+            next.append(Minimax(temp))
+
     def next_boards(self, m, turn):
         next = list()
         for i in range(0, self.rows-2):
@@ -105,33 +117,15 @@ class Board(GridLayout):
                     for x in range(2):
                         for y in range(2):
                             temp = copy.deepcopy(board)
-                            add = True
                             toRotate = list()
                             for a in range(int((self.rows-1)/2)*x, int((self.rows-1)/2)*(x+1)):
                                 toRotate.append(list())
                                 for b in range(int((self.cols-1)/2)*y, int((self.cols-1)/2)*(y+1)):
                                     toRotate[a - int((self.cols-1)/2)*x].append(temp[a][b])
                             numpy.rot90(toRotate)
-                            for a in range(int((self.rows-1)/2)*x, int((self.rows-1)/2)*(x+1)):
-                                for b in range(int((self.rows-1)/2)*y, int((self.rows-1)/2)*(y+1)):
-                                    temp[a][b] = toRotate[a - int((self.rows-1)/2)*x][b - int((self.rows-1)/2)*y]
-                            for c in next:
-                                if c.board == temp:
-                                    add = False
-                                    break
-                            if add:
-                                next.append(Minimax(temp))
-                            add = True
+                            self.next_boards_help(next, temp, toRotate, x, y)
                             numpy.rot90(toRotate, 2)
-                            for a in range(int((self.rows-1)/2)*x, int((self.rows-1)/2)*(x+1)):
-                                for b in range(int((self.rows-1)/2)*y, int((self.rows-1)/2)*(y+1)):
-                                    temp[a][b] = toRotate[a - int((self.rows-1)/2)*x][b - int((self.rows-1)/2)*y]
-                            for c in next:
-                                if c.board == temp:
-                                    add = False
-                                    break
-                            if add:
-                                next.append(Minimax(temp))
+                            self.next_boards_help(next, temp, toRotate, x, y)
         return next
 
     def quit_game(self, touch):
@@ -145,13 +139,13 @@ class Board(GridLayout):
             button.bind(on_press=self.reset_board)
             self.add_widget(button)
 
-    def evaluate_board_help(self, board, i, j, count, value):
-        if board[i][j] == board[i][j - 1] != 0 or board[i][j] != 0 and count.num == 0:
+    def evaluate_board_help(self, board, i, j, count, value, prev_i, prev_j):
+        if board[i][j] == board[prev_i][prev_j] != 0 or board[i][j] != 0 and count.num == 0:
             count.num += 1
         else:
-            if board[i][j - 1] == 1:
+            if board[prev_i][prev_j] == 1:
                 value.num += 2 ** count.num
-            elif board[i][j - 1] == 2:
+            elif board[prev_i][prev_j] == 2:
                 value.num -= 2 ** count.num
             count.num = 0
 
@@ -166,13 +160,14 @@ class Board(GridLayout):
         for i in range(len(board)):
             for j in range(len(board[i])):
                 if j != 0:
-                    self.evaluate_board_help(board, i, j, sequence_count_r, value)
-                    self.evaluate_board_help(board, i, j, sequence_count_c, value)
-                    if i+j < 6:
-                        self.evaluate_board_help(board, i+j, j, sequence_count_d11, value)
-                        self.evaluate_board_help(board, j, i+j, sequence_count_d12, value)
-                        self.evaluate_board_help(board, i+j, self.cols-3-j, sequence_count_d21, value)
-                        self.evaluate_board_help(board, j, self.cols-3-i-j, sequence_count_d22, value)
+                    self.evaluate_board_help(board, i, j, sequence_count_r, value, i, j-1)
+                    self.evaluate_board_help(board, j, i, sequence_count_c, value, j-1, i)
+                    if i < 2 and j < 5:
+                        self.evaluate_board_help(board, i+j, j, sequence_count_d11, value, i+j-1, j-1)
+                        self.evaluate_board_help(board, i+j, self.cols-3-j, sequence_count_d21, value, i+j-1, self.cols-3-j-1)
+                        if i != 0:
+                            self.evaluate_board_help(board, j, i + j, sequence_count_d12, value, j - 1, i + j - 1)
+                            self.evaluate_board_help(board, j, self.cols-3-i-j, sequence_count_d22, value, j-1, self.cols-3-i-j-1)
                 else:
                     if board[i][j] != 0:
                         sequence_count_r.num = 1
@@ -185,9 +180,9 @@ class Board(GridLayout):
                         sequence_count_d21.num = 1
                     if board[j][self.cols-3-i-j] != 0:
                         sequence_count_d22.num = 1
-        return value
+        return value.num
 
-    def create_tree(self, turn, current, depth):
+    def create_tree(self, turn, current, depth, alpha=float("-inf"), beta=float("inf")):
         winner = self.win(current.board)
         if winner == "Tie!":
             current.value = 0
@@ -199,29 +194,28 @@ class Board(GridLayout):
             current.value = self.evaluate_board(current.board)
         else:
             if turn == 1:
+                current.value = float("inf")
                 current.next = self.next_boards(current, 2)
-            if turn == 2:
+            elif turn == 2:
+                current.value = float("-inf")
                 current.next = self.next_boards(current, 1)
             for i in current.next:
                 if turn == 1:
-                    self.create_tree(2, i, depth - 1)
+                    self.create_tree(2, i, depth - 1, alpha, beta)
+                    if current.value > i.value:
+                        current.value = i.value
+                    if beta > current.value:
+                        beta = current.value
+                    if beta <= alpha:
+                        break
                 else:
-                    self.create_tree(1, i, depth - 1)
-            first = True
-            if turn == 2:
-                for i in current.next:
-                    if first:
+                    self.create_tree(1, i, depth - 1, alpha, beta)
+                    if current.value < i.value:
                         current.value = i.value
-                        first = False
-                    elif current.value < i.value:
-                        current.value = i.value
-            else:
-                for i in current.next:
-                    if first:
-                        current.value = i.value
-                        first = False
-                    elif current.value > i.value:
-                        current.value = i.value
+                    if alpha < current.value:
+                        alpha = current.value
+                    if beta <= alpha:
+                        break
 
     def reset_board(self, touch):
         if touch.text == "1":
@@ -238,13 +232,15 @@ class Board(GridLayout):
                     self.buttons[i][j].disabled = False
                 self.add_widget(self.buttons[i][j])
 
-    def win_help(self, board, filled, i, j, count1, count2):
+    def win_help(self, board, i, j, count1, count2, filled=None):
         if board[i][j] == 1:
-            filled.num += 1
+            if filled is not None:
+                filled.num += 1
             count1.num += 1
             count2.num = 0
         elif board[i][j] == 2:
-            filled.num += 1
+            if filled is not None:
+                filled.num += 1
             count2.num += 1
             count1.num = 0
         else:
@@ -271,22 +267,22 @@ class Board(GridLayout):
             count1diag22 = IntPointer()
             count2diag22 = IntPointer()
             for j in range(0, self.cols-2):
-                self.win_help(board, filled, i, j, count1row, count2row)
-                self.win_help(board, filled, j, i, count1col, count2col)
-                if i + j < 6:
-                    self.win_help(board, filled, i+j, j, count1diag11, count2diag11)
-                    self.win_help(board, filled, j, i+j, count1diag12, count2diag12)
-                    self.win_help(board, filled, i+j, self.cols-3-j, count1diag21, count2diag21)
-                    self.win_help(board, filled, j, self.cols-3-i-j, count1diag22, count2diag22)
-                if count1row == self.cols-3 or count1col == self.rows-3 or count1diag11 == self.rows-3 or count1diag12 == self.rows-3 or count1diag21 == self.rows-3 or count1diag22 == self.rows-3:
+                self.win_help(board, i, j, count1row, count2row, filled)
+                self.win_help(board, j, i, count1col, count2col)
+                if i < 2 and j < 5:
+                    self.win_help(board, i+j, j, count1diag11, count2diag11)
+                    self.win_help(board, j, i+j, count1diag12, count2diag12)
+                    self.win_help(board, i+j, self.cols-3-j, count1diag21, count2diag21)
+                    self.win_help(board, j, self.cols-3-i-j, count1diag22, count2diag22)
+                if count1row.num == self.cols-3 or count1col.num == self.rows-3 or count1diag11.num == self.rows-3 or count1diag12.num == self.rows-3 or count1diag21.num == self.rows-3 or count1diag22.num == self.rows-3:
                     found1 = True
-                elif count2row == self.cols-3 or count2col == self.rows-3 or count2diag11 == self.rows-3 or count2diag12 == self.rows-3 or count2diag21 == self.rows-3 or count2diag22 == self.rows-3:
+                elif count2row.num == self.cols-3 or count2col.num == self.rows-3 or count2diag11.num == self.rows-3 or count2diag12.num == self.rows-3 or count2diag21.num == self.rows-3 or count2diag22.num == self.rows-3:
                     found2 = True
                 if found1 and found2:
                     break
             if found1 and found2:
                 break
-        if found1 and found2 or filled == (self.rows-2) * (self.cols-2):
+        if found1 and found2 or filled.num == (self.rows-2) * (self.cols-2):
             return "Tie!"
         elif found1:
             return "Player 1 wins!"
@@ -318,10 +314,16 @@ class Board(GridLayout):
                         self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].source = temp_s
                         self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].disabled = temp_d
             self.rotatable = False
-            self.win()
-            if self.players == 1:
+            win = self.win()
+            if win is not None:
+                self.clear_widgets()
+                self.add_widget(Label(text=win))
+                self.add_widget(self.reset)
+                self.add_widget(self.menu)
+                self.add_widget(self.quit)
+            elif self.players == 1:
                 self.tree = Minimax(self.convert_board(self.buttons))
-                self.create_tree(self.turn, self.tree, 2)
+                self.create_tree(self.turn, self.tree, 3)
                 self.respond()
 
     def place(self, touch):
@@ -365,6 +367,13 @@ class Board(GridLayout):
                 elif self.tree.board[i-1][j-1] == 2:
                     self.buttons[i][j].source = "blue.png"
                     self.buttons[i][j].disabled = True
+        win = self.win()
+        if win is not None:
+            self.clear_widgets()
+            self.add_widget(Label(text=win))
+            self.add_widget(self.reset)
+            self.add_widget(self.menu)
+            self.add_widget(self.quit)
 
 
 class Game(App):

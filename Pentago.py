@@ -102,15 +102,20 @@ class Board(Layout):
             Rectangle(pos=button.pos, size=button.size)
             d = button.size[1]
             if button.mark == "empty":
-                Color(1, 1, 1)
-                Ellipse(Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d)))
+                Color(84/255, 125/255, 119/255)
+                Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d))
             elif button.mark == "red":
                 Color(1, 0, 0)
-                Ellipse(Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d)))
+                Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d))
             elif button.mark == "blue":
                 Color(0, 0, 1)
-                Ellipse(Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d)))
-
+                Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d))
+            else:
+                Color(1, 1, 0)
+                if button.mark == "right":
+                    Line(points=[button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/5, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]*4/5, button.pos[0] + button.size[0]*4/5, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5], width=10)
+                if button.mark == "up":
+                    Line(points=[])
 
     def convert_board(self, board=None):
         if board is None:

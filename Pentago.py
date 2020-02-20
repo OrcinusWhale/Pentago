@@ -66,10 +66,10 @@ class Board(Layout):
         self.buttons[0][1].start_row = self.buttons[1][0].start_row = 1
         self.buttons[0][1].start_col = self.buttons[1][0].start_col = 1
         self.buttons[0][1].cw = True
-        self.buttons[1][0].mark = "down"
+        self.buttons[1][0].mark = "up"
         self.draw(self.buttons[1][0])
         self.buttons[1][0].cw = False
-        self.buttons[self.rows-2][0].mark = "up"
+        self.buttons[self.rows-2][0].mark = "down"
         self.draw(self.buttons[self.rows-2][0])
         self.buttons[self.rows-2][0].start_row = self.buttons[self.rows-1][1].start_row = int((self.rows-2)/2)+1
         self.buttons[self.rows-2][0].start_col = self.buttons[self.rows-1][1].start_col = 1
@@ -82,10 +82,10 @@ class Board(Layout):
         self.buttons[self.rows-1][self.cols-2].start_row = self.buttons[self.rows-2][self.cols-1].start_row = int((self.rows-2)/2)+1
         self.buttons[self.rows-1][self.cols-2].start_col = self.buttons[self.rows-2][self.cols-1].start_col = int((self.cols-2)/2)+1
         self.buttons[self.rows-1][self.cols-2].cw = True
-        self.buttons[self.rows-2][self.cols-1].mark = "up"
+        self.buttons[self.rows-2][self.cols-1].mark = "down"
         self.draw(self.buttons[self.rows-2][self.cols-1])
         self.buttons[self.rows-2][self.cols-1].cw = False
-        self.buttons[1][self.cols-1].mark = "down"
+        self.buttons[1][self.cols-1].mark = "up"
         self.draw(self.buttons[1][self.cols-1])
         self.buttons[1][self.cols-1].start_row = self.buttons[0][self.cols-2].start_row = 1
         self.buttons[1][self.cols-1].start_col = self.buttons[0][self.cols-2].start_col = int((self.cols-2)/2)+1
@@ -115,7 +115,7 @@ class Board(Layout):
                 if button.mark == "right":
                     Line(points=[button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 - button.size[1]/2 + 10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]*4/5, button.pos[0] + button.size[0]/2 + button.size[1]/2 - 10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5], width=10)
                 if button.mark == "up":
-                    Line(points=[])
+                    Line(points=[button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + 10, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 + button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1] - 10, button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2], width=10)
 
     def convert_board(self, board=None):
         if board is None:

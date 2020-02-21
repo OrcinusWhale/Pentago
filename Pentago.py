@@ -21,7 +21,7 @@ class Minimax:
 
 class IntPointer:
     def __init__(self, num=0):
-        self. num = num
+        self.num = num
 
 
 class WidgetButton(ButtonBehavior, Widget):
@@ -40,8 +40,8 @@ class Board(Layout):
         Layout.__init__(self)
         self.rows = 8
         self.cols = 8
-        self.buttons = list()
         self.tree = None
+        self.status = "Menu"
         self.reset = Button(text="Click to play again")
         self.reset.bind(on_press=self.reset_board)
         self.menu = Button(text="Click to return to menu")
@@ -51,6 +51,8 @@ class Board(Layout):
         self.rotatable = False
         self.players = 0
         self.turn = 1
+        Window.bind(on_resize=self.resize)
+        self.buttons = list()
         for i, y in enumerate(range(0, Window.size[1], int(Window.size[1]/8))):
             self.buttons.append(list())
             for j, x in enumerate(range(0, Window.size[0], int(Window.size[0]/8))):
@@ -94,6 +96,17 @@ class Board(Layout):
         self.draw(self.buttons[0][self.cols-2])
         self.buttons[0][self.cols-2].cw = False
         self.go_menu()
+
+    def resize(self, window=None, width=None, height=None):
+        if self.status == "Menu":
+            self.go_menu()
+        for i, y in enumerate(range(0, Window.size[1], int(Window.size[1]/8))):
+            self.buttons.append(list())
+            for j, x in enumerate(range(0, Window.size[0], int(Window.size[0]/8))):
+                self.buttons[i][j].pos = (x, y)
+                self.buttons[i][j].size = (Window.size[0] / 8, Window.size[1] / 8)
+                self.draw(self.buttons[i][j])
+        self.win()
 
     def draw(self, button):
         button.canvas.clear()
@@ -170,6 +183,7 @@ class Board(Layout):
 
     def go_menu(self, touch=None):
         self.clear_widgets()
+        self.status = "Menu"
         label = Label(text="How many players?", font_size="50sp")
         label.pos = (Window.size[0]*1/2 - label.size[0]/2, Window.size[1]*2/3 - label.size[1]/2)
         self.add_widget(label)
@@ -223,7 +237,7 @@ class Board(Layout):
         return value.num
 
     def create_tree(self, turn, current, depth, alpha=float("-inf"), beta=float("inf")):
-        winner = self.win(current.board)
+        winner = self.check_win(current.board)
         if winner == "Tie!":
             current.value = 0
         elif winner == "Player 1 wins!":
@@ -262,19 +276,19 @@ class Board(Layout):
             self.players = 1
         elif touch.text == "2":
             self.players = 2
+        self.status = "Playing"
         self.clear_widgets()
         self.rotatable = False
         self.turn = 1
-        self.draw(self.buttons[0][0])
-        for i in range(self.rows):
-            for j in range(self.cols):
-                if self.buttons[i][j].mark == "blue" or self.buttons[i][j].mark == "red":
-                    self.buttons[i][j].mark = "empty"
-                    self.draw(self.buttons[i][j])
-                    self.buttons[i][j].disabled = False
-                self.add_widget(self.buttons[i][j])
+        for i in self.buttons:
+            for j in i:
+                self.disabled = False
+                if j.mark == "blue" or j.mark == "red":
+                    j.mark = "empty"
+                    self.draw(j)
+                self.add_widget(j)
 
-    def win_help(self, board, i, j, count1, count2, filled=None):
+    def check_win_help(self, board, i, j, count1, count2, filled=None):
         if board[i][j] == 1:
             if filled is not None:
                 filled.num += 1
@@ -289,7 +303,7 @@ class Board(Layout):
             count1.num = 0
             count2.num = 0
 
-    def win(self, board=None):
+    def check_win(self, board=None):
         if board is None:
             board = self.convert_board(self.buttons)
         filled = IntPointer()
@@ -309,13 +323,13 @@ class Board(Layout):
             count1diag22 = IntPointer()
             count2diag22 = IntPointer()
             for j in range(0, self.cols-2):
-                self.win_help(board, i, j, count1row, count2row, filled)
-                self.win_help(board, j, i, count1col, count2col)
+                self.check_win_help(board, i, j, count1row, count2row, filled)
+                self.check_win_help(board, j, i, count1col, count2col)
                 if i < 2 and j < 5:
-                    self.win_help(board, i+j, j, count1diag11, count2diag11)
-                    self.win_help(board, j, i+j, count1diag12, count2diag12)
-                    self.win_help(board, i+j, self.cols-3-j, count1diag21, count2diag21)
-                    self.win_help(board, j, self.cols-3-i-j, count1diag22, count2diag22)
+                    self.check_win_help(board, i+j, j, count1diag11, count2diag11)
+                    self.check_win_help(board, j, i+j, count1diag12, count2diag12)
+                    self.check_win_help(board, i+j, self.cols-3-j, count1diag21, count2diag21)
+                    self.check_win_help(board, j, self.cols-3-i-j, count1diag22, count2diag22)
                 if count1row.num == self.cols-3 or count1col.num == self.rows-3 or count1diag11.num == self.rows-3 or count1diag12.num == self.rows-3 or count1diag21.num == self.rows-3 or count1diag22.num == self.rows-3:
                     found1 = True
                 elif count2row.num == self.cols-3 or count2col.num == self.rows-3 or count2diag11.num == self.rows-3 or count2diag12.num == self.rows-3 or count2diag21.num == self.rows-3 or count2diag22.num == self.rows-3:
@@ -330,6 +344,26 @@ class Board(Layout):
             return "Player 1 wins!"
         elif found2:
             return "Player 2 wins!"
+        
+    def win(self):
+        win = self.check_win()
+        if win is not None:
+            label = Label(text=win, font_size="20sp")
+            label.pos = (Window.size[0] / 2 - label.size[0] / 2, Window.size[1] * 2 / 3 - label.size[1] / 2)
+            self.reset.pos = (Window.size[0]/2 - self.reset.size[0]/2, Window.size[1]*1/3 + self.menu.size[1]/2)
+            self.menu.pos = (Window.size[0]/2 - self.menu.size[0]/2, Window.size[1]*1/3 - self.menu.size[1]/2)
+            self.quit.pos = (Window.size[0]/2 - self.quit.size[0]/2, Window.size[1]*1/3 - 2*self.menu.size[1]/2)
+            if self.status != "Win":
+                self.status = "Win"
+                for i in self.buttons:
+                    for j in i:
+                        j.disabled = True
+                self.add_widget(label)
+                self.add_widget(self.reset)
+                self.add_widget(self.menu)
+                self.add_widget(self.quit)
+            return True
+        return False
 
     def rotate(self, touch):
         if self.rotatable:
@@ -364,14 +398,7 @@ class Board(Layout):
                         self.draw(self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i])
                         self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].disabled = temp_d
             self.rotatable = False
-            win = self.win()
-            if win is not None:
-                self.clear_widgets()
-                self.add_widget(Label(text=win))
-                self.add_widget(self.reset)
-                self.add_widget(self.menu)
-                self.add_widget(self.quit)
-            elif self.players == 1:
+            if self.players == 1 and not self.win():
                 self.tree = Minimax(self.convert_board(self.buttons))
                 self.create_tree(self.turn, self.tree, 3)
                 self.respond()
@@ -388,13 +415,7 @@ class Board(Layout):
             touch.disabled = True
             self.rotatable = True
             self.draw(touch)
-        win = self.win()
-        if win is not None:
-            self.clear_widgets()
-            self.add_widget(Label(text=win))
-            self.add_widget(self.reset)
-            self.add_widget(self.menu)
-            self.add_widget(self.quit)
+        self.win()
 
     def respond(self):
         first = True
@@ -419,14 +440,8 @@ class Board(Layout):
                     self.buttons[i][j].mark = "blue"
                     self.buttons[i][j].disabled = True
                 self.draw(self.buttons[i][j])
-        win = self.win()
-        if win is not None:
-            self.clear_widgets()
-            self.add_widget(Label(text=win))
-            self.add_widget(self.reset)
-            self.add_widget(self.menu)
-            self.add_widget(self.quit)
-
+        self.win()
+        
 
 class Game(App):
     def build(self):

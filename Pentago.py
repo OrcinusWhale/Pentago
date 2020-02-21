@@ -126,11 +126,16 @@ class Board(Layout):
                 Color(0, 0, 1)
                 Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d))
             else:
+                width = 5
                 Color(1, 1, 0)
                 if button.mark == "right":
-                    Line(points=[button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 - button.size[1]/2 + 10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]*4/5, button.pos[0] + button.size[0]/2 + button.size[1]/2 - 10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5], width=10)
-                if button.mark == "up":
-                    Line(points=[button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + 10, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 + button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1] - 10, button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2], width=10)
+                    Line(points=[button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 - button.size[1]/2 + width, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]*4/5, button.pos[0] + button.size[0]/2 + button.size[1]/2 - width, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5], width=width)
+                elif button.mark == "up":
+                    Line(points=[button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + width, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 + button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1] - width, button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2], width=width)
+                elif button.mark == "down":
+                    Line(points=[button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1] - width, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 + button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + width, button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2], width=width)
+                elif button.mark == "left":
+                    Line(points=[button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 + button.size[1]/2 - width, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]*4/5, button.pos[0] + button.size[0]/2 - button.size[1]/2 + width, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5], width=width)
 
     def convert_board(self, board=None):
         if board is None:
@@ -284,7 +289,7 @@ class Board(Layout):
         self.turn = 1
         for i in self.buttons:
             for j in i:
-                self.disabled = False
+                j.disabled = False
                 if j.mark == "blue" or j.mark == "red":
                     j.mark = "empty"
                     self.draw(j)
@@ -354,8 +359,8 @@ class Board(Layout):
             label.pos = (Window.size[0] / 2 - label.size[0] / 2, Window.size[1] * 2 / 3 - label.size[1] / 2)
             self.reset.pos = (Window.size[0]/2 - self.reset.size[0]/2, Window.size[1]*1/3 + self.menu.size[1]/2)
             self.menu.pos = (Window.size[0]/2 - self.menu.size[0]/2, Window.size[1]*1/3 - self.menu.size[1]/2)
-            self.quit.pos = (Window.size[0]/2 - self.quit.size[0]/2, Window.size[1]*1/3 - 2*self.menu.size[1]/2)
-            if self.status != "Win":
+            self.quit.pos = (Window.size[0]/2 - self.quit.size[0]/2, Window.size[1]*1/3 - self.menu.size[1]/2 - self.quit.size[1])
+            if self.status == "Playing":
                 self.status = "Win"
                 for i in self.buttons:
                     for j in i:

@@ -54,15 +54,17 @@ class Board(Layout):
         Window.bind(on_resize=self.resize)
         self.buttons = list()
         for i, y in enumerate(range(0, Window.size[1], int(Window.size[1]/8))):
-            self.buttons.append(list())
+            if i < 8:
+                self.buttons.append(list())
             for j, x in enumerate(range(0, Window.size[0], int(Window.size[0]/8))):
-                self.buttons[i].append(WidgetButton((x, y), (Window.size[0] / 8, Window.size[1] / 8), i, j))
-                if 0 < i < self.rows-1 and 0 < j < self.cols - 1:
-                    self.buttons[i][j].bind(on_press=self.place)
-                    self.buttons[i][j].mark = "empty"
-                elif i in [0, self.rows-1] and j in [1, self.cols-2] or i in [1, self.rows-2] and j in [0, self.cols-1]:
-                    self.buttons[i][j].bind(on_press=self.rotate)
-                self.draw(self.buttons[i][j])
+                if i < 8 and j < 8:
+                    self.buttons[i].append(WidgetButton((x, y), (Window.size[0] / 8, Window.size[1] / 8), i, j))
+                    if 0 < i < self.rows-1 and 0 < j < self.cols - 1:
+                        self.buttons[i][j].bind(on_press=self.place)
+                        self.buttons[i][j].mark = "empty"
+                    elif i in [0, self.rows-1] and j in [1, self.cols-2] or i in [1, self.rows-2] and j in [0, self.cols-1]:
+                        self.buttons[i][j].bind(on_press=self.rotate)
+                    self.draw(self.buttons[i][j])
         self.buttons[0][1].mark = "right"
         self.draw(self.buttons[0][1])
         self.buttons[0][1].start_row = self.buttons[1][0].start_row = 1
@@ -101,11 +103,11 @@ class Board(Layout):
         if self.status == "Menu":
             self.go_menu()
         for i, y in enumerate(range(0, Window.size[1], int(Window.size[1]/8))):
-            self.buttons.append(list())
             for j, x in enumerate(range(0, Window.size[0], int(Window.size[0]/8))):
-                self.buttons[i][j].pos = (x, y)
-                self.buttons[i][j].size = (Window.size[0] / 8, Window.size[1] / 8)
-                self.draw(self.buttons[i][j])
+                if i < 8 and j < 8:
+                    self.buttons[i][j].pos = (x, y)
+                    self.buttons[i][j].size = (Window.size[0] / 8, Window.size[1] / 8)
+                    self.draw(self.buttons[i][j])
         self.win()
 
     def draw(self, button):

@@ -152,10 +152,10 @@ class Board(Layout):
                     converted[i-1].append(0)
         return converted
 
-    def next_boards_help(self, next, temp, toRotate, x, y):
+    def next_boards_help(self, next, temp, rotated, x, y):
         for a in range(int((self.rows - 1) / 2) * x, int((self.rows - 1) / 2) * (x + 1)):
             for b in range(int((self.rows - 1) / 2) * y, int((self.rows - 1) / 2) * (y + 1)):
-                temp[a][b] = toRotate[a - int((self.rows - 1) / 2) * x][b - int((self.rows - 1) / 2) * y]
+                temp[a][b] = rotated[a - int((self.rows - 1) / 2) * x][b - int((self.rows - 1) / 2) * y]
         add = True
         for c in next:
             if c.board == temp:
@@ -179,10 +179,10 @@ class Board(Layout):
                                 toRotate.append(list())
                                 for b in range(int((self.cols-1)/2)*y, int((self.cols-1)/2)*(y+1)):
                                     toRotate[a - int((self.cols-1)/2)*x].append(temp[a][b])
-                            numpy.rot90(toRotate)
-                            self.next_boards_help(next, temp, toRotate, x, y)
-                            numpy.rot90(toRotate, 2)
-                            self.next_boards_help(next, temp, toRotate, x, y)
+                            rotated = numpy.rot90(toRotate)
+                            self.next_boards_help(next, temp, rotated, x, y)
+                            rotated = numpy.rot90(toRotate, 3)
+                            self.next_boards_help(next, temp, rotated, x, y)
         return next
 
     def quit_game(self, touch):
@@ -407,7 +407,7 @@ class Board(Layout):
             self.rotatable = False
             if self.players == 1 and not self.win():
                 self.tree = Minimax(self.convert_board(self.buttons))
-                self.create_tree(self.turn, self.tree, 3)
+                self.create_tree(self.turn, self.tree, 2)
                 self.respond()
 
     def place(self, touch):

@@ -42,6 +42,7 @@ class Board(Layout):
         self.cols = 8
         self.tree = None
         self.status = "Menu"
+        self.win_text = Label(font_size="20sp")
         self.reset = Button(text="Click to play again")
         self.reset.bind(on_press=self.reset_board)
         self.menu = Button(text="Click to return to menu")
@@ -355,8 +356,8 @@ class Board(Layout):
     def win(self):
         win = self.check_win()
         if win is not None:
-            label = Label(text=win, font_size="20sp")
-            label.pos = (Window.size[0] / 2 - label.size[0] / 2, Window.size[1] * 2 / 3 - label.size[1] / 2)
+            self.win_text.text = win
+            self.win_text.pos = (Window.size[0] / 2 - self.win_text.size[0] / 2, Window.size[1] * 2 / 3 - self.win_text.size[1] / 2)
             self.reset.pos = (Window.size[0]/2 - self.reset.size[0]/2, Window.size[1]*1/3 + self.menu.size[1]/2)
             self.menu.pos = (Window.size[0]/2 - self.menu.size[0]/2, Window.size[1]*1/3 - self.menu.size[1]/2)
             self.quit.pos = (Window.size[0]/2 - self.quit.size[0]/2, Window.size[1]*1/3 - self.menu.size[1]/2 - self.quit.size[1])
@@ -365,7 +366,7 @@ class Board(Layout):
                 for i in self.buttons:
                     for j in i:
                         j.disabled = True
-                self.add_widget(label)
+                self.add_widget(self.win_text)
                 self.add_widget(self.reset)
                 self.add_widget(self.menu)
                 self.add_widget(self.quit)

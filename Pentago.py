@@ -12,13 +12,6 @@ import numpy
 import sys
 
 
-class Minimax:
-    def __init__(self, board, next=None):
-        self.board = board
-        self.value = 0
-        self.next = next
-
-
 class IntPointer:
     def __init__(self, num=0):
         self.num = num
@@ -40,7 +33,6 @@ class Board(Layout):
         Layout.__init__(self)
         self.rows = 8
         self.cols = 8
-        self.tree = None
         self.status = "Menu"
         self.win_text = Label(font_size="20sp")
         self.reset = Button(text="Click to play again")
@@ -159,22 +151,22 @@ class Board(Layout):
                 temp[a][b] = rotated[a - int((self.rows - 1) / 2) * x][b - int((self.rows - 1) / 2) * y]
         add = True
         for c in next:
-            if c.board == temp:
+            if c == temp:
                 add = False
                 break
         if add:
-            next.append(Minimax(temp))
+            next.append(copy.deepcopy(temp))
 
-    def next_boards(self, m, turn):
+    def next_boards(self, board, turn):
         next = list()
         for i in range(0, self.rows-2):
             for j in range(0, self.cols-2):
-                board = copy.deepcopy(m.board)
-                if board[i][j] == 0:
-                    board[i][j] = turn
+                clone = copy.deepcopy(board)
+                if clone[i][j] == 0:
+                    clone[i][j] = turn
                     for x in range(2):
                         for y in range(2):
-                            temp = copy.deepcopy(board)
+                            temp = copy.deepcopy(clone)
                             toRotate = list()
                             for a in range(int((self.rows-1)/2)*x, int((self.rows-1)/2)*(x+1)):
                                 toRotate.append(list())
@@ -206,12 +198,19 @@ class Board(Layout):
             count.num += 1
         else:
             if board[prev_i][prev_j] == 1:
-                value.num += 2 ** count.num
-            elif board[prev_i][prev_j] == 2:
                 value.num -= 2 ** count.num
+            elif board[prev_i][prev_j] == 2:
+                value.num += 2 ** count.num
             count.num = 0
 
     def evaluate_board(self, board):
+        winner = self.check_win(board)
+        if winner == "Player 1 wins!":
+            return float('-inf')
+        elif winner == "Player 2 wins!":
+            return float('inf')
+        elif winner == "Tie!":
+            return 0
         value = IntPointer()
         sequence_count_r = IntPointer()
         sequence_count_c = IntPointer()
@@ -243,41 +242,58 @@ class Board(Layout):
                     if board[j][self.cols-3-i-j] != 0:
                         sequence_count_d22.num = 1
         return value.num
+    
+    def minimax(self, board, depth):
+        alpha = float('-inf')
+        beta = float('inf')
+        moves = self.next_boards(board, 2)
+        best_move = moves[0]
+        best_score = float('-inf')
+        for move in moves:
+            clone = copy.deepcopy(move)
+            score = self.min_play(clone, depth - 1, alpha, beta)
+            if score > best_score:
+                best_move = move
+                best_score = score
+            if alpha < best_score:
+                alpha = best_score
+            if beta <= alpha:
+                break
+        return best_move
 
-    def create_tree(self, turn, current, depth, alpha=float("-inf"), beta=float("inf")):
-        winner = self.check_win(current.board)
-        if winner == "Tie!":
-            current.value = 0
-        elif winner == "Player 1 wins!":
-            current.value = float("inf")
-        elif winner == "Player 2 wins!":
-            current.value = float("-inf")
-        elif depth == 0:
-            current.value = self.evaluate_board(current.board)
-        else:
-            if turn == 1:
-                current.value = float("inf")
-                current.next = self.next_boards(current, 2)
-            elif turn == 2:
-                current.value = float("-inf")
-                current.next = self.next_boards(current, 1)
-            for i in current.next:
-                if turn == 1:
-                    self.create_tree(2, i, depth - 1, alpha, beta)
-                    if current.value > i.value:
-                        current.value = i.value
-                    if beta > current.value:
-                        beta = current.value
-                    if beta <= alpha:
-                        break
-                else:
-                    self.create_tree(1, i, depth - 1, alpha, beta)
-                    if current.value < i.value:
-                        current.value = i.value
-                    if alpha < current.value:
-                        alpha = current.value
-                    if beta <= alpha:
-                        break
+    def min_play(self, board, depth, alpha, beta):
+        if depth == 0 or self.check_win(board) is not None:
+            return self.evaluate_board(board)
+        moves = self.next_boards(board, 1)
+        best_score = float('inf')
+        for move in moves:
+            clone = copy.deepcopy(move)
+            score = self.max_play(clone, depth - 1, alpha, beta)
+            if score < best_score:
+                best_move = move
+                best_score = score
+            if beta > best_score:
+                beta = best_score
+            if beta <= alpha:
+                break
+        return best_score
+
+    def max_play(self, board, depth, alpha, beta):
+        if depth == 0 or self.check_win(board) is not None:
+            return self.evaluate_board(board)
+        moves = self.next_boards(board, 2)
+        best_score = float('-inf')
+        for move in moves:
+            clone = copy.deepcopy(move)
+            score = self.min_play(clone, depth - 1, alpha, beta)
+            if score > best_score:
+                best_move = move
+                best_score = score
+            if alpha < best_score:
+                alpha = best_score
+            if beta <= alpha:
+                break
+        return best_score
 
     def reset_board(self, touch):
         if touch.text == "1":
@@ -407,8 +423,6 @@ class Board(Layout):
                         self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].disabled = temp_d
             self.rotatable = False
             if self.players == 1 and not self.win():
-                self.tree = Minimax(self.convert_board(self.buttons))
-                self.create_tree(self.turn, self.tree, 2)
                 self.respond()
 
     def place(self, touch):
@@ -426,25 +440,16 @@ class Board(Layout):
         self.win()
 
     def respond(self):
-        first = True
-        min_value = None
-        for i in self.tree.next:
-            if first:
-                min_value = i
-                first = False
-            else:
-                if i.value < min_value.value:
-                    min_value = i
-        self.tree = min_value
+        move = self.minimax(self.convert_board(self.buttons), 2)
         for i in range(1, len(self.buttons)-1):
             for j in range(1, len(self.buttons[i])-1):
-                if self.tree.board[i-1][j-1] == 0:
+                if move[i-1][j-1] == 0:
                     self.buttons[i][j].mark = "empty"
                     self.buttons[i][j].disabled = False
-                elif self.tree.board[i-1][j-1] == 1:
+                elif move[i-1][j-1] == 1:
                     self.buttons[i][j].mark = "red"
                     self.buttons[i][j].disabled = True
-                elif self.tree.board[i-1][j-1] == 2:
+                elif move[i-1][j-1] == 2:
                     self.buttons[i][j].mark = "blue"
                     self.buttons[i][j].disabled = True
                 self.draw(self.buttons[i][j])

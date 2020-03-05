@@ -2,8 +2,8 @@ from kivy.uix.layout import Layout
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.button import Button
 from kivy.uix.label import Label
-from kivy.uix.image import Image
 from kivy.uix.widget import Widget
+
 from kivy.graphics import *
 from kivy.app import App
 from kivy.core.window import Window
@@ -150,11 +150,7 @@ class Board(Layout):
             for b in range(int((self.rows - 1) / 2) * y, int((self.rows - 1) / 2) * (y + 1)):
                 temp[a][b] = rotated[a - int((self.rows - 1) / 2) * x][b - int((self.rows - 1) / 2) * y]
         add = True
-        for c in next:
-            if c == temp:
-                add = False
-                break
-        if add:
+        if temp not in next:
             next.append(copy.deepcopy(temp))
 
     def next_boards(self, board, turn):
@@ -193,55 +189,60 @@ class Board(Layout):
             button.bind(on_press=self.reset_board)
             self.add_widget(button)
 
-    def evaluate_board_help(self, board, i, j, count, value, prev_i, prev_j):
-        if board[i][j] == board[prev_i][prev_j] != 0 or board[i][j] != 0 and count.num == 0:
-            count.num += 1
+    def evaluate_slice(self, s):
+        s = s.tolist()
+        if len(s) == 5:
+            if s.count(1) > 0 and s.count(2) == 0:
+                return -2 ** s.count(1)
+            elif s.count(2) > 0 and s.count(1) == 0:
+                return 2 ** s.count(2)
+            else:
+                return 0
         else:
-            if board[prev_i][prev_j] == 1:
-                value.num -= 2 ** count.num
-            elif board[prev_i][prev_j] == 2:
-                value.num += 2 ** count.num
-            count.num = 0
+            if max(s[0:self.rows - 3].count(1), s[0:self.rows - 3].count(2)) > max(s[1:self.rows - 2].count(1), s[1:self.rows - 2].count(2)):
+                if s[0:self.rows - 3].count(2) == 0:
+                    return -2 ** s[0:self.rows - 3].count(1)
+                elif s[0:self.rows - 3].count(1) == 0:
+                    return 2 ** s[0:self.rows - 3].count(2)
+                else:
+                    return 0
+            elif max(s[0:self.rows - 3].count(1), s[0:self.rows - 3].count(2)) < max(s[1:self.rows - 2].count(1), s[1:self.rows - 2].count(2)):
+                if s[1:self.rows - 2].count(2) == 0:
+                    return -2 ** s[1:self.rows - 2].count(1)
+                elif s[1:self.rows - 2].count(1) == 0:
+                    return 2 ** s[1:self.rows - 2].count(2)
+                else:
+                    return 0
+            else:
+                if s[1:self.rows - 3].count(0) == self.rows - 2:
+                    if s[0] == s[self.rows - 2] == 1:
+                        return -2
+                    elif s[0] == s[self.rows - 2] == 2:
+                        return 2
+                    else:
+                        return 0
+        return 0
 
     def evaluate_board(self, board):
         winner = self.check_win(board)
+        board = numpy.array(board)
+        value = 0
         if winner == "Player 1 wins!":
             return float('-inf')
         elif winner == "Player 2 wins!":
             return float('inf')
         elif winner == "Tie!":
             return 0
-        value = IntPointer()
-        sequence_count_r = IntPointer()
-        sequence_count_c = IntPointer()
-        sequence_count_d11 = IntPointer()
-        sequence_count_d12 = IntPointer()
-        sequence_count_d21 = IntPointer()
-        sequence_count_d22 = IntPointer()
-        for i in range(len(board)):
-            for j in range(len(board[i])):
-                if j != 0:
-                    self.evaluate_board_help(board, i, j, sequence_count_r, value, i, j-1)
-                    self.evaluate_board_help(board, j, i, sequence_count_c, value, j-1, i)
-                    if i < 2 and j < 5:
-                        self.evaluate_board_help(board, i+j, j, sequence_count_d11, value, i+j-1, j-1)
-                        self.evaluate_board_help(board, i+j, self.cols-3-j, sequence_count_d21, value, i+j-1, self.cols-3-j-1)
-                        if i != 0:
-                            self.evaluate_board_help(board, j, i + j, sequence_count_d12, value, j - 1, i + j - 1)
-                            self.evaluate_board_help(board, j, self.cols-3-i-j, sequence_count_d22, value, j-1, self.cols-3-i-j-1)
-                else:
-                    if board[i][j] != 0:
-                        sequence_count_r.num = 1
-                        sequence_count_c.num = 1
-                    if board[i+j][j] != 0:
-                        sequence_count_d11.num = 1
-                    if board[j][i+j] != 0:
-                        sequence_count_d12.num = 1
-                    if board[i+j][self.cols-3-j] != 0:
-                        sequence_count_d21.num = 1
-                    if board[j][self.cols-3-i-j] != 0:
-                        sequence_count_d22.num = 1
-        return value.num
+        value += self.evaluate_slice(numpy.diag(board))
+        value += self.evaluate_slice(numpy.diag(board, 1))
+        value += self.evaluate_slice(numpy.diag(board, -1))
+        value += self.evaluate_slice(numpy.diag(numpy.fliplr(board)))
+        value += self.evaluate_slice(numpy.diag(numpy.fliplr(board), 1))
+        value += self.evaluate_slice(numpy.diag(numpy.fliplr(board), -1))
+        for i in range(self.rows - 2):
+            value += self.evaluate_slice(board[i])
+            value += self.evaluate_slice(board[0:self.rows - 2, i:i+1])
+        return value
     
     def minimax(self, board, depth):
         alpha = float('-inf')

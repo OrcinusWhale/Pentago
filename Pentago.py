@@ -1,15 +1,21 @@
-from kivy.uix.layout import Layout
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.widget import Widget
-
 from kivy.graphics import *
 from kivy.app import App
 from kivy.core.window import Window
+from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition
+import time
 import copy
 import numpy
 import sys
+
+
+def quit_game(touch):
+    sys.exit()
 
 
 class IntPointer:
@@ -21,6 +27,7 @@ class WidgetButton(ButtonBehavior, Widget):
     def __init__(self, pos, size, row, col, mark=None):
         Widget.__init__(self)
         ButtonBehavior.__init__(self)
+        self.size_hint = (None, None)
         self.pos = pos
         self.size = size
         self.row = row
@@ -28,19 +35,58 @@ class WidgetButton(ButtonBehavior, Widget):
         self.mark = mark
 
 
-class Board(Layout):
-    def __init__(self):
-        Layout.__init__(self)
+class HomeMenu(Screen):
+    def __init__(self, **kwargs):
+        Screen.__init__(self, **kwargs)
+        self.manager = self.parent
+        self.layout = BoxLayout(orientation="vertical")
+        self.add_widget(self.layout)
+        b = Button(text="1 player")
+        b.bind(on_press=self.play)
+        self.layout.add_widget(b)
+        b = Button(text="2 players")
+        b.bind(on_press=self.play)
+        self.layout.add_widget(b)
+        b = Button(text="Rules")
+        b.bind(on_press=self.rules)
+        self.layout.add_widget(b)
+        b = Button(text="Quit")
+        b.bind(on_press=quit_game)
+        self.layout.add_widget(b)
+
+    def play(self, touch):
+        global players
+        if touch.text == "1 player":
+            players = 1
+        else:
+            players = 2
+        self.manager.current = "Game Screen"
+
+    def rules(self, touch):
+        self.manage.current = "Rules Screen"
+
+
+class GameScreen(Screen):
+    def __init__(self, **kwargs):
+        Screen.__init__(self, **kwargs)
+        self.manager = self.parent
+        self.layout = FloatLayout()
+        self.add_widget(self.layout)
         self.rows = 8
         self.cols = 8
-        self.status = "Menu"
+        self.status = "Playing"
         self.win_text = Label(font_size="20sp")
+        self.win_text.size_hint = (None, None)
         self.reset = Button(text="Click to play again")
+        self.reset.size_hint = (None, None)
         self.reset.bind(on_press=self.reset_board)
         self.menu = Button(text="Click to return to menu")
+        self.menu.size_hint = (None, None)
         self.menu.bind(on_press=self.go_menu)
         self.quit = Button(text="Click to quit")
-        self.quit.bind(on_press=self.quit_game)
+        self.quit.size_hint = (None, None)
+        self.quit.bind(on_press=quit_game)
+        self.depth = 2
         self.rotatable = False
         self.players = 0
         self.turn = 1
@@ -58,6 +104,7 @@ class Board(Layout):
                     elif i in [0, self.rows-1] and j in [1, self.cols-2] or i in [1, self.rows-2] and j in [0, self.cols-1]:
                         self.buttons[i][j].bind(on_press=self.rotate)
                     self.draw(self.buttons[i][j])
+                    self.layout.add_widget(self.buttons[i][j])
         self.buttons[0][1].mark = "right"
         self.draw(self.buttons[0][1])
         self.buttons[0][1].start_row = self.buttons[1][0].start_row = 1
@@ -90,11 +137,12 @@ class Board(Layout):
         self.buttons[0][self.cols-2].mark = "left"
         self.draw(self.buttons[0][self.cols-2])
         self.buttons[0][self.cols-2].cw = False
-        self.go_menu()
+
+    def go_menu(self, touch):
+        self.reset_board()
+        self.manager.current = "Home Menu"
 
     def resize(self, window=None, width=None, height=None):
-        if self.status == "Menu":
-            self.go_menu()
         for i, y in enumerate(range(0, Window.size[1], int(Window.size[1]/8))):
             for j, x in enumerate(range(0, Window.size[0], int(Window.size[0]/8))):
                 if i < 8 and j < 8:
@@ -173,21 +221,6 @@ class Board(Layout):
                             rotated = numpy.rot90(toRotate, 3)
                             self.next_boards_help(next, temp, rotated, x, y)
         return next
-
-    def quit_game(self, touch):
-        sys.exit()
-
-    def go_menu(self, touch=None):
-        self.clear_widgets()
-        self.status = "Menu"
-        label = Label(text="How many players?", font_size="50sp")
-        label.pos = (Window.size[0]*1/2 - label.size[0]/2, Window.size[1]*2/3 - label.size[1]/2)
-        self.add_widget(label)
-        for i in range(1, 3):
-            button = Button(text=str(i))
-            button.pos = (Window.size[0]*i/3 - button.size[0]/2, Window.size[1]*1/3 - button.size[1]/2)
-            button.bind(on_press=self.reset_board)
-            self.add_widget(button)
 
     def evaluate_slice(self, s):
         s = s.tolist()
@@ -296,13 +329,9 @@ class Board(Layout):
                 break
         return best_score
 
-    def reset_board(self, touch):
-        if touch.text == "1":
-            self.players = 1
-        elif touch.text == "2":
-            self.players = 2
+    def reset_board(self, touch=None):
         self.status = "Playing"
-        self.clear_widgets()
+        self.layout.clear_widgets()
         self.rotatable = False
         self.turn = 1
         for i in self.buttons:
@@ -311,7 +340,7 @@ class Board(Layout):
                 if j.mark == "blue" or j.mark == "red":
                     j.mark = "empty"
                     self.draw(j)
-                self.add_widget(j)
+                self.layout.add_widget(j)
 
     def check_win_help(self, board, i, j, count1, count2, filled=None):
         if board[i][j] == 1:
@@ -383,10 +412,10 @@ class Board(Layout):
                 for i in self.buttons:
                     for j in i:
                         j.disabled = True
-                self.add_widget(self.win_text)
-                self.add_widget(self.reset)
-                self.add_widget(self.menu)
-                self.add_widget(self.quit)
+                self.layout.add_widget(self.win_text)
+                self.layout.add_widget(self.reset)
+                self.layout.add_widget(self.menu)
+                self.layout.add_widget(self.quit)
             return True
         return False
 
@@ -423,14 +452,14 @@ class Board(Layout):
                         self.draw(self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i])
                         self.buttons[touch.start_row+int((self.rows-2)/2)-1-i-j][touch.start_col+i].disabled = temp_d
             self.rotatable = False
-            if self.players == 1 and not self.win():
+            if players == 1 and not self.win():
                 self.respond()
 
     def place(self, touch):
         if not touch.disabled and not self.rotatable:
             if self.turn == 1:
                 touch.mark = "red"
-                if self.players == 2:
+                if players == 2:
                     self.turn = 2
             else:
                 touch.mark = "blue"
@@ -441,7 +470,12 @@ class Board(Layout):
         self.win()
 
     def respond(self):
-        move = self.minimax(self.convert_board(self.buttons), 2)
+        start_time = time.time()
+        move = self.minimax(self.convert_board(self.buttons), self.depth)
+        if time.time() - start_time < 3:
+            self.depth += 1
+        elif time.time() - start_time > 15 and self.depth > 2:
+            self.depth -= 1
         for i in range(1, len(self.buttons)-1):
             for j in range(1, len(self.buttons[i])-1):
                 if move[i-1][j-1] == 0:
@@ -460,7 +494,11 @@ class Board(Layout):
 class Game(App):
     def build(self):
         self.title = "Pentago"
-        return Board()
+        root = ScreenManager(transition=NoTransition())
+        root.add_widget(HomeMenu(name="Home Menu"))
+        root.add_widget(GameScreen(name="Game Screen"))
+        return root
 
 
+players = 0
 Game().run()

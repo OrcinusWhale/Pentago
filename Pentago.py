@@ -8,6 +8,7 @@ from kivy.graphics import *
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition
+import subprocess
 import time
 import copy
 import numpy
@@ -63,7 +64,10 @@ class HomeMenu(Screen):
         self.manager.current = "Game Screen"
 
     def rules(self, touch):
-        self.manage.current = "Rules Screen"
+        if sys.platform == "darwin":
+            subprocess.Popen("open rules.pdf", shell=True)
+        elif sys.platform == "win32":
+            subprocess.Popen("start rules.pdf", shell=True)
 
 
 class GameScreen(Screen):
@@ -75,18 +79,16 @@ class GameScreen(Screen):
         self.rows = 8
         self.cols = 8
         self.status = "Playing"
-        self.win_text = Label(font_size="20sp")
-        self.win_text.size_hint = (None, None)
-        self.reset = Button(text="Click to play again")
-        self.reset.size_hint = (None, None)
+        self.win_text = Label(font_size="20sp", size_hint=(None, None))
+        self.reset = Button(text="Click to play again", width=Window.size[0]/5, size_hint=(None, None))
         self.reset.bind(on_press=self.reset_board)
-        self.menu = Button(text="Click to return to menu")
-        self.menu.size_hint = (None, None)
+        self.menu = Button(text="Click to return to menu", width=Window.size[0]/5, size_hint=(None, None))
         self.menu.bind(on_press=self.go_menu)
-        self.quit = Button(text="Click to quit")
-        self.quit.size_hint = (None, None)
+        self.quit = Button(text="Click to quit", width=Window.size[0]/5, size_hint=(None, None))
         self.quit.bind(on_press=quit_game)
         self.depth = 2
+        self.offset = 0
+        self.tooLong = False
         self.rotatable = False
         self.players = 0
         self.turn = 1
@@ -260,9 +262,9 @@ class GameScreen(Screen):
         winner = self.check_win(board)
         board = numpy.array(board)
         value = 0
-        if winner == "Player 1 wins!":
+        if winner == "Red wins!":
             return float('-inf')
-        elif winner == "Player 2 wins!":
+        elif winner == "Blue wins!":
             return float('inf')
         elif winner == "Tie!":
             return 0
@@ -296,7 +298,12 @@ class GameScreen(Screen):
         return best_move
 
     def min_play(self, board, depth, alpha, beta):
-        if depth == 0 or self.check_win(board) is not None:
+        if time.time() - self.start_time > 10 and self.depth > 2:
+            self.tooLong = True
+            self.offset += 1
+            self.depth -= 1
+            self.start_time = time.time()
+        if depth - self.offset < 1 or self.check_win(board) is not None:
             return self.evaluate_board(board)
         moves = self.next_boards(board, 1)
         best_score = float('inf')
@@ -313,7 +320,12 @@ class GameScreen(Screen):
         return best_score
 
     def max_play(self, board, depth, alpha, beta):
-        if depth == 0 or self.check_win(board) is not None:
+        if time.time() - self.start_time > 10 and self.depth > 2:
+            self.tooLong = True
+            self.offset += 1
+            self.depth -= 1
+            self.start_time = time.time()
+        if depth - self.offset == 0 or self.check_win(board) is not None:
             return self.evaluate_board(board)
         moves = self.next_boards(board, 2)
         best_score = float('-inf')
@@ -395,9 +407,9 @@ class GameScreen(Screen):
         if found1 and found2 or filled.num == (self.rows-2) * (self.cols-2):
             return "Tie!"
         elif found1:
-            return "Player 1 wins!"
+            return "Red wins!"
         elif found2:
-            return "Player 2 wins!"
+            return "Blue wins!"
         
     def win(self):
         win = self.check_win()
@@ -470,12 +482,12 @@ class GameScreen(Screen):
         self.win()
 
     def respond(self):
-        start_time = time.time()
+        self.start_time = time.time()
         move = self.minimax(self.convert_board(self.buttons), self.depth)
-        if time.time() - start_time < 3:
+        if time.time() - self.start_time < 6 and not self.tooLong:
             self.depth += 1
-        elif time.time() - start_time > 15 and self.depth > 2:
-            self.depth -= 1
+        self.offset = 0
+        self.tooLong = False
         for i in range(1, len(self.buttons)-1):
             for j in range(1, len(self.buttons[i])-1):
                 if move[i-1][j-1] == 0:

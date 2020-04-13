@@ -360,37 +360,37 @@ class GameScreen(Screen):
     def check_win_help(self, board, i, j, count1, count2, filled=None):
         if board[i][j] == 1:
             if filled is not None:
-                filled.num += 1
-            count1.num += 1
-            count2.num = 0
+                filled.value += 1
+            count1.value += 1
+            count2.value = 0
         elif board[i][j] == 2:
             if filled is not None:
-                filled.num += 1
-            count2.num += 1
-            count1.num = 0
+                filled.value += 1
+            count2.value += 1
+            count1.value = 0
         else:
-            count1.num = 0
-            count2.num = 0
+            count1.value = 0
+            count2.value = 0
 
     def check_win(self, board=None):
         if board is None:
             board = self.convert_board(self.buttons)
-        filled = IntPointer()
+        filled = Pointer()
         found1 = False
         found2 = False
         for i in range(0, self.rows-2):
-            count1row = IntPointer()
-            count2row = IntPointer()
-            count1col = IntPointer()
-            count2col = IntPointer()
-            count1diag11 = IntPointer()
-            count2diag11 = IntPointer()
-            count1diag12 = IntPointer()
-            count2diag12 = IntPointer()
-            count1diag21 = IntPointer()
-            count2diag21 = IntPointer()
-            count1diag22 = IntPointer()
-            count2diag22 = IntPointer()
+            count1row = Pointer()
+            count2row = Pointer()
+            count1col = Pointer()
+            count2col = Pointer()
+            count1diag11 = Pointer()
+            count2diag11 = Pointer()
+            count1diag12 = Pointer()
+            count2diag12 = Pointer()
+            count1diag21 = Pointer()
+            count2diag21 = Pointer()
+            count1diag22 = Pointer()
+            count2diag22 = Pointer()
             for j in range(0, self.cols-2):
                 self.check_win_help(board, i, j, count1row, count2row, filled)
                 self.check_win_help(board, j, i, count1col, count2col)
@@ -399,15 +399,15 @@ class GameScreen(Screen):
                     self.check_win_help(board, j, i+j, count1diag12, count2diag12)
                     self.check_win_help(board, i+j, self.cols-3-j, count1diag21, count2diag21)
                     self.check_win_help(board, j, self.cols-3-i-j, count1diag22, count2diag22)
-                if count1row.num == self.cols-3 or count1col.num == self.rows-3 or count1diag11.num == self.rows-3 or count1diag12.num == self.rows-3 or count1diag21.num == self.rows-3 or count1diag22.num == self.rows-3:
+                if count1row.value == self.cols-3 or count1col.value == self.rows-3 or count1diag11.value == self.rows-3 or count1diag12.value == self.rows-3 or count1diag21.value == self.rows-3 or count1diag22.value == self.rows-3:
                     found1 = True
-                elif count2row.num == self.cols-3 or count2col.num == self.rows-3 or count2diag11.num == self.rows-3 or count2diag12.num == self.rows-3 or count2diag21.num == self.rows-3 or count2diag22.num == self.rows-3:
+                elif count2row.value == self.cols-3 or count2col.value == self.rows-3 or count2diag11.value == self.rows-3 or count2diag12.value == self.rows-3 or count2diag21.value == self.rows-3 or count2diag22.value == self.rows-3:
                     found2 = True
                 if found1 and found2:
                     break
             if found1 and found2:
                 break
-        if found1 and found2 or filled.num == (self.rows-2) * (self.cols-2):
+        if found1 and found2 or filled.value == (self.rows-2) * (self.cols-2):
             return "Tie!"
         elif found1:
             return "Red wins!"

@@ -26,11 +26,8 @@ class IntPointer:
 
 class WidgetButton(ButtonBehavior, Widget):
     def __init__(self, pos, size, row, col, mark=None):
-        Widget.__init__(self)
+        Widget.__init__(self, size_hint=(None, None), pos=pos, size=size)
         ButtonBehavior.__init__(self)
-        self.size_hint = (None, None)
-        self.pos = pos
-        self.size = size
         self.row = row
         self.col = col
         self.mark = mark

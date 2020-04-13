@@ -19,9 +19,9 @@ def quit_game(touch):
     sys.exit()
 
 
-class IntPointer:
-    def __init__(self, num=0):
-        self.num = num
+class Pointer:
+    def __init__(self, value=0):
+        self.value = value
 
 
 class WidgetButton(ButtonBehavior, Widget):

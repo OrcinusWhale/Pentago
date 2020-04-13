@@ -85,6 +85,7 @@ class GameScreen(Screen):
         self.quit.bind(on_press=quit_game)
         self.depth = 2
         self.offset = 0
+        self.start_time = 0
         self.tooLong = False
         self.rotatable = False
         self.players = 0

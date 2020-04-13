@@ -88,7 +88,6 @@ class GameScreen(Screen):
         self.start_time = 0
         self.tooLong = False
         self.rotatable = False
-        self.players = 0
         self.turn = 1
         Window.bind(on_resize=self.resize)
         self.buttons = list()

@@ -84,13 +84,12 @@ class GameScreen(Screen):
         self.quit = Button(text="Click to quit", width=Window.size[0]/5, size_hint=(None, None))
         self.quit.bind(on_press=quit_game)
         self.depth = 2
-        self.offset = 0
         self.start_time = 0
         self.tooLong = False
         self.rotatable = False
         self.turn = 1
         Window.bind(on_resize=self.resize)
-        self.buttons = list()
+        self.buttons= list()
         for i, y in enumerate(range(0, Window.size[1], int(Window.size[1]/8))):
             if i < 8:
                 self.buttons.append(list())
@@ -303,10 +302,9 @@ class GameScreen(Screen):
     def min_play(self, board, depth, alpha, beta):
         if time.time() - self.start_time > 10 and self.depth > 2:
             self.tooLong = True
-            self.offset += 1
             self.depth -= 1
             self.start_time = time.time()
-        if depth - self.offset < 1 or self.check_win(board) is not None:
+        if depth < 1 or self.check_win(board) is not None:
             return self.evaluate_board(board)
         moves = self.next_boards(board, 1)
         best_score = float('inf')
@@ -325,10 +323,9 @@ class GameScreen(Screen):
     def max_play(self, board, depth, alpha, beta):
         if time.time() - self.start_time > 10 and self.depth > 2:
             self.tooLong = True
-            self.offset += 1
             self.depth -= 1
             self.start_time = time.time()
-        if depth - self.offset == 0 or self.check_win(board) is not None:
+        if depth or self.check_win(board) is not None:
             return self.evaluate_board(board)
         moves = self.next_boards(board, 2)
         best_score = float('-inf')
@@ -489,7 +486,6 @@ class GameScreen(Screen):
         move = self.minimax(self.convert_board(self.buttons), self.depth)
         if time.time() - self.start_time < 6 and not self.tooLong:
             self.depth += 1
-        self.offset = 0
         self.tooLong = False
         for i in range(1, len(self.buttons)-1):
             for j in range(1, len(self.buttons[i])-1):

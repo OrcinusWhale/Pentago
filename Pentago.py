@@ -172,38 +172,39 @@ class GameScreen(Screen):
 
     # Draws on button according to properties
     def draw(self, button):
-        button.canvas.clear()
-        with button.canvas:
-            Color(84/255, 154/255, 119/255)
-            Rectangle(pos=button.pos, size=button.size)
-            d = button.size[1]
-            # If empty spot
-            if button.mark == "empty":
-                Color(84/255, 125/255, 119/255)
-                Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d))
-            # Spot filled with red
-            elif button.mark == "red":
-                Color(1, 0, 0)
-                Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d))
-            # Spot filled with blue
-            elif button.mark == "blue":
-                Color(0, 0, 1)
-                Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d))
-            else:
-                width = 5
-                Color(1, 1, 0)
-                # Right arrow
-                if button.mark == "right":
-                    Line(points=[button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 - button.size[1]/2 + width, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]*4/5, button.pos[0] + button.size[0]/2 + button.size[1]/2 - width, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5], width=width)
-                # Up arrow
-                elif button.mark == "up":
-                    Line(points=[button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + width, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 + button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1] - width, button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2], width=width)
-                # Down arrow
-                elif button.mark == "down":
-                    Line(points=[button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1] - width, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 + button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + width, button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2], width=width)
-                # Left arrow
-                elif button.mark == "left":
-                    Line(points=[button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 + button.size[1]/2 - width, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]*4/5, button.pos[0] + button.size[0]/2 - button.size[1]/2 + width, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5], width=width)
+        if button.mark != "menu":
+            button.canvas.clear()
+            with button.canvas:
+                Color(84/255, 154/255, 119/255)
+                Rectangle(pos=button.pos, size=button.size)
+                d = button.size[1]
+                # If empty spot
+                if button.mark == "empty":
+                    Color(84/255, 125/255, 119/255)
+                    Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d))
+                # Spot filled with red
+                elif button.mark == "red":
+                    Color(1, 0, 0)
+                    Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d))
+                # Spot filled with blue
+                elif button.mark == "blue":
+                    Color(0, 0, 1)
+                    Ellipse(pos=(button.pos[0] + button.size[0] / 2 - d / 2, button.pos[1]), size=(d, d))
+                else:
+                    width = 5
+                    Color(1, 1, 0)
+                    # Right arrow
+                    if button.mark == "right":
+                        Line(points=[button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 - button.size[1]/2 + width, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]*4/5, button.pos[0] + button.size[0]/2 + button.size[1]/2 - width, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5], width=width)
+                    # Up arrow
+                    elif button.mark == "up":
+                        Line(points=[button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + width, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 + button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1] - width, button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2], width=width)
+                    # Down arrow
+                    elif button.mark == "down":
+                        Line(points=[button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1] - width, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 + button.size[1]*3/10, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + width, button.pos[0] + button.size[0]/2 - button.size[1]*3/10, button.pos[1] + button.size[1]/2], width=width)
+                    # Left arrow
+                    elif button.mark == "left":
+                        Line(points=[button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2 + button.size[1]/2 - width, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]*4/5, button.pos[0] + button.size[0]/2 - button.size[1]/2 + width, button.pos[1] + button.size[1]/2, button.pos[0] + button.size[0]/2, button.pos[1] + button.size[1]/5], width=width)
 
     # Converts a 2d list with buttons to 2d list with numbers for simplicity purposes
     def convert_board(self, board=None):
@@ -409,6 +410,7 @@ class GameScreen(Screen):
         self.layout.clear_widgets()
         self.rotatable = False
         self.turn = 1
+        self.depth = 2
         for i in self.buttons:
             for j in i:
                 j.disabled = False

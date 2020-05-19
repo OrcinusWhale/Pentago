@@ -91,6 +91,7 @@ class GameScreen(Screen):
         self.quit.bind(on_press=quit_game)
         self.depth = 2  # Minimax depth
         self.start_time = 0  # Used for measuring move calculation time
+        self.offset = 0  # Used to lower minimax depth in real time
         self.tooLong = False  # If calculation time is longer than 10 seoncds
         self.rotatable = False  # If a board can rotated
         self.turn = 1  # Player turn (1/2)
@@ -362,9 +363,10 @@ class GameScreen(Screen):
         if time.time() - self.start_time > 10 and self.depth > 2:
             self.tooLong = True
             self.depth -= 1
+            self.offset += 1
             self.start_time = time.time()
         # Reached bottom depth or win
-        if depth == 0 or self.check_win(board) is not None:
+        if depth - self.offset == 0 or self.check_win(board) is not None:
             return self.evaluate_board(board)
         moves = self.next_boards(board, 1)
         best_score = float('inf')
@@ -386,9 +388,10 @@ class GameScreen(Screen):
         if time.time() - self.start_time > 10 and self.depth > 2:
             self.tooLong = True
             self.depth -= 1
+            self.offset += 1
             self.start_time = time.time()
         # Reached bottom depth or win
-        if depth == 0 or self.check_win(board) is not None:
+        if depth - self.offset == 0 or self.check_win(board) is not None:
             return self.evaluate_board(board)
         moves = self.next_boards(board, 2)
         best_score = float('-inf')
@@ -570,6 +573,7 @@ class GameScreen(Screen):
         if time.time() - self.start_time < 6 and not self.tooLong:
             self.depth += 1
         self.tooLong = False
+        self.offset = 0
         for i in range(1, len(self.buttons)-1):
             for j in range(1, len(self.buttons[i])-1):
                 # If empty

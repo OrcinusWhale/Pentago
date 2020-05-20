@@ -366,7 +366,7 @@ class GameScreen(Screen):
             self.offset += 1
             self.start_time = time.time()
         # Reached bottom depth or win
-        if depth - self.offset == 0 or self.check_win(board) is not None:
+        if depth - self.offset < 1 or self.check_win(board) is not None:
             return self.evaluate_board(board)
         moves = self.next_boards(board, 1)
         best_score = float('inf')
@@ -391,7 +391,7 @@ class GameScreen(Screen):
             self.offset += 1
             self.start_time = time.time()
         # Reached bottom depth or win
-        if depth - self.offset == 0 or self.check_win(board) is not None:
+        if depth - self.offset < 1 or self.check_win(board) is not None:
             return self.evaluate_board(board)
         moves = self.next_boards(board, 2)
         best_score = float('-inf')
